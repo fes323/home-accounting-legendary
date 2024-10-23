@@ -2,6 +2,9 @@
 .venv
 
 */migrations/
+*/.vscode/
+.vscode
+main.ini
 
 ### OSX ###
 .DS_Store

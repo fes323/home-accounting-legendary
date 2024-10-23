@@ -1,7 +1,8 @@
 from django.db import models
 from django.conf import settings
-from accounting.models import TransactionCategory
-from accounting.models import Wallet
+from accounting.models.transactionCategory import TransactionCategoryTree
+from accounting.models.wallet import Wallet
+import uuid
 
 
 class Transaction(models.Model):
@@ -11,11 +12,11 @@ class Transaction(models.Model):
         ("EX", "EXPENSE"),
     )
 
-    uuid = models.UUIDField(primary_key=True)
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     t_type = models.CharField(choices=CHOICES, max_length=2)
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name="wallet_transactions")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="user_transactions")
-    category = models.ForeignKey(TransactionCategory, on_delete=models.CASCADE, related_name="category_transactions", blank=True, null=True)
+    category = models.ForeignKey(TransactionCategoryTree, on_delete=models.CASCADE, related_name="category_transactions", blank=True, null=True)
     amount = models.DecimalField(max_digits=14, decimal_places=2)
     tax = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, blank=True)
     description = models.CharField(max_length=255, blank=True)
