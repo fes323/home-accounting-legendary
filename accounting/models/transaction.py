@@ -3,6 +3,7 @@ from django.conf import settings
 from accounting.models.transactionCategory import TransactionCategoryTree
 from accounting.models.wallet import Wallet
 import uuid
+from django.utils import timezone
 
 
 class Transaction(models.Model):
@@ -20,6 +21,7 @@ class Transaction(models.Model):
     amount = models.DecimalField(max_digits=14, decimal_places=2)
     tax = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, blank=True)
     description = models.CharField(max_length=255, blank=True)
+    date = models.DateField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
