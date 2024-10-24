@@ -4,7 +4,7 @@ from accounting.models.transactionCategory import TransactionCategoryTree
 from accounting.models.wallet import Wallet
 import uuid
 from django.utils import timezone
-
+from django.db import transaction
 
 class Transaction(models.Model):
 
@@ -32,3 +32,43 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f'[{self.user.username}] ' + str(self.t_type) + ': ' + str(self.amount)
+
+    @transaction.atomic
+    def save(self, **kwargs):
+
+        if self.pk:
+            try:
+                old_transaction = Transaction.objects.get(pk=self.pk)
+            except Transaction.DoesNotExist:
+                return super().save(**kwargs)
+            finally:
+                old_amount, old_type = old_transaction.amount, old_transaction.t_type
+                super().save(**kwargs)
+
+            '''Пересчитываем баланс кашелька'''
+            if old_type == 'IN' and self.t_type == 'IN':
+                self.wallet.balance -= old_amount
+                self.wallet.balance += self.amount
+
+            if old_type == 'EX' and self.t_type == 'EX':
+                self.wallet.balance += old_amount
+                self.wallet.balance -= self.amount
+
+            if old_type == 'IN' and self.t_type == 'EX':
+                self.wallet.balance -= old_amount
+                self.wallet.save()
+                self.wallet.balance -= self.amount
+
+            if old_type == 'EX' and self.t_type == 'IN':
+                self.wallet.balance += old_amount
+                self.wallet.save()
+                self.wallet.balance += self.amount
+
+            self.wallet.save()
+        else:
+            if self.t_type == 'IN':
+                self.wallet.balance += self.amount
+            else:
+                self.wallet.balance -= self.amount
+            self.wallet.save()
+            super().save(**kwargs)
