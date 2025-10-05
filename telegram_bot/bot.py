@@ -104,11 +104,30 @@ def run_polling():
         bot = await create_bot()
         dp = await create_dispatcher()
 
-        await on_startup(bot)
+        # Удаляем webhook перед запуском polling
+        try:
+            await bot.delete_webhook()
+            logger.info("Webhook удален для polling режима")
+        except Exception as e:
+            logger.warning(f"Не удалось удалить webhook: {e}")
+
+        logger.info("Бот запущен в режиме polling!")
 
         try:
             await dp.start_polling(bot)
+        except Exception as e:
+            error_msg = str(e)
+            if 'Conflict' in error_msg and 'getUpdates' in error_msg:
+                logger.error(
+                    "Конфликт: уже запущен другой экземпляр бота! "
+                    "Используйте команду 'python manage.py stop_bot --force' "
+                    "для остановки всех экземпляров бота."
+                )
+                raise
+            else:
+                logger.error(f"Ошибка при запуске бота: {e}")
+                raise
         finally:
-            await on_shutdown(bot)
+            logger.info("Бот остановлен!")
 
     asyncio.run(main())

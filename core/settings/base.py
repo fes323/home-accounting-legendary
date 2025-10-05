@@ -1,15 +1,20 @@
 import os
-import configparser
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-config = configparser.ConfigParser()
-config.read(f"{BASE_DIR}\main.ini")
 
-SECRET_KEY = config['DJANGO']['SECRET_KEY']
+# Загружаем переменные окружения из .env файла
+load_dotenv(BASE_DIR / '.env')
 
-ALLOWED_HOSTS = []
+# Секретный ключ из переменных окружения
+SECRET_KEY = os.getenv(
+    'SECRET_KEY', 'django-insecure-change-this-in-production')
+
+# Разрешенные хосты
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 
 # Application definition
@@ -112,7 +117,9 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Telegram Bot Settings
+# ===========================================
+# TELEGRAM BOT SETTINGS
+# ===========================================
 
 # Telegram Bot Configuration
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
@@ -125,7 +132,7 @@ BOT_DESCRIPTION = "Личный помощник для учета финанс�
 
 # Webhook settings
 TELEGRAM_WEBHOOK_PATH = '/telegram/webhook/'
-TELEGRAM_WEBHOOK_URL = f"{TELEGRAM_WEBHOOK_URL}{TELEGRAM_WEBHOOK_PATH}"
+TELEGRAM_WEBHOOK_FULL_URL = f"{TELEGRAM_WEBHOOK_URL}{TELEGRAM_WEBHOOK_PATH}" if TELEGRAM_WEBHOOK_URL else ''
 
 # Bot commands
 TELEGRAM_BOT_COMMANDS = [
@@ -158,3 +165,29 @@ TELEGRAM_BOT_COMMANDS = [
         "description": "Помощь по командам"
     }
 ]
+
+# ===========================================
+# REDIS CONFIGURATION (Optional)
+# ===========================================
+REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
+REDIS_PORT = int(os.getenv('REDIS_PORT', '6379'))
+REDIS_DB = int(os.getenv('REDIS_DB', '0'))
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', '')
+
+# ===========================================
+# EMAIL CONFIGURATION (Optional)
+# ===========================================
+EMAIL_HOST = os.getenv('EMAIL_HOST', '')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', '')
+
+# ===========================================
+# CELERY CONFIGURATION (Optional)
+# ===========================================
+CELERY_BROKER_URL = os.getenv(
+    'CELERY_BROKER_URL', f'redis://{REDIS_HOST}:{REDIS_PORT}/1')
+CELERY_RESULT_BACKEND = os.getenv(
+    'CELERY_RESULT_BACKEND', f'redis://{REDIS_HOST}:{REDIS_PORT}/1')

@@ -7,10 +7,13 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Загружаем переменные окружения из .env файла
-# Ищем .env файл в корне проекта
 load_dotenv(BASE_DIR / '.env')
 
-# Telegram Bot Configuration
+# ===========================================
+# TELEGRAM BOT CONFIGURATION
+# ===========================================
+
+# Основные настройки бота
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
 TELEGRAM_WEBHOOK_URL = os.getenv('TELEGRAM_WEBHOOK_URL', '')
 TELEGRAM_WEBHOOK_SECRET = os.getenv('TELEGRAM_WEBHOOK_SECRET', '')
@@ -21,7 +24,7 @@ BOT_DESCRIPTION = "Личный помощник для учета финанс�
 
 # Webhook settings
 WEBHOOK_PATH = '/telegram/webhook/'
-WEBHOOK_URL = f"{TELEGRAM_WEBHOOK_URL}{WEBHOOK_PATH}"
+WEBHOOK_URL = f"{TELEGRAM_WEBHOOK_URL}{WEBHOOK_PATH}" if TELEGRAM_WEBHOOK_URL else ''
 
 # Bot commands
 BOT_COMMANDS = [
@@ -54,3 +57,30 @@ BOT_COMMANDS = [
         "description": "Помощь по командам"
     }
 ]
+
+# ===========================================
+# VALIDATION
+# ===========================================
+
+
+def validate_config():
+    """Проверка корректности конфигурации"""
+    errors = []
+
+    if not TELEGRAM_BOT_TOKEN:
+        errors.append("TELEGRAM_BOT_TOKEN не установлен")
+
+    if not BOT_USERNAME:
+        errors.append("BOT_USERNAME не установлен")
+
+    if errors:
+        raise ValueError(f"Ошибки конфигурации: {', '.join(errors)}")
+
+    return True
+
+
+# Автоматическая проверка при импорте
+try:
+    validate_config()
+except ValueError as e:
+    print(f"Предупреждение: {e}")
