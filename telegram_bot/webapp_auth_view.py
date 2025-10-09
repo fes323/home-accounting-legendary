@@ -88,7 +88,7 @@ class TelegramWebAppAuthView(View):
                 'description': 'Send Telegram WebApp init data in _auth field'
             },
             'example': {
-                'curl': 'curl -X POST -d "_auth=YOUR_TELEGRAM_INIT_DATA" https://your-domain.com/telegram/webapp-auth/'
+                'curl': 'curl -X POST -d "_auth=YOUR_TELEGRAM_INIT_DATA" https://wallet.my-bucket.ru/telegram/webapp-auth/'
             }
         })
 
