@@ -13,6 +13,8 @@ from telegram_bot.mini_app_views import (CategoryCreateView,
                                          WalletListView)
 from telegram_bot.test_auth_view import TestAuthView
 from telegram_bot.views import TelegramWebhookView, telegram_webhook
+from telegram_bot.webapp_auth_view import (TelegramWebAppAuthView,
+                                           TelegramWebAppTestView)
 
 app_name = 'telegram_bot'
 
@@ -20,6 +22,10 @@ urlpatterns = [
     # Webhook endpoints
     path('webhook/', TelegramWebhookView.as_view(), name='webhook'),
     path('webhook/simple/', telegram_webhook, name='simple_webhook'),
+
+    # WebApp API endpoints
+    path('webapp-auth/', TelegramWebAppAuthView.as_view(), name='webapp_auth'),
+    path('webapp-test/', TelegramWebAppTestView.as_view(), name='webapp_test'),
 
     # Mini App endpoints
     path('mini-app/', MiniAppDashboardView.as_view(), name='mini_app_dashboard'),

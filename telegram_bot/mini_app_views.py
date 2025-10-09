@@ -57,7 +57,12 @@ class TelegramMiniAppView(View):
 
     def _is_telegram_request(self, request):
         """Проверяем, что запрос приходит из Telegram"""
-        # Проверяем заголовки и параметры Telegram WebApp
+        # Проверяем данные Telegram WebApp в поле _auth (согласно документации Aiogram)
+        init_data = request.GET.get('_auth') or request.POST.get('_auth')
+        if init_data:
+            return True
+
+        # Также проверяем старый формат для совместимости
         init_data = request.GET.get(
             'tgWebAppData') or request.POST.get('tgWebAppData')
         if init_data:
@@ -82,11 +87,14 @@ class TelegramMiniAppView(View):
     def _get_telegram_user(self, request):
         """Получаем пользователя из Telegram данных"""
         try:
-            # Получаем данные из Telegram WebApp
-            init_data = request.GET.get(
-                'tgWebAppData') or request.POST.get('tgWebAppData')
+            # Получаем данные из Telegram WebApp (сначала проверяем _auth, потом старый формат)
+            init_data = request.GET.get('_auth') or request.POST.get('_auth')
             if not init_data:
-                logger.warning("No tgWebAppData found in request")
+                init_data = request.GET.get(
+                    'tgWebAppData') or request.POST.get('tgWebAppData')
+
+            if not init_data:
+                logger.warning("No Telegram WebApp data found in request")
                 return None
 
             # Парсим данные Telegram WebApp с проверкой подписи
@@ -134,8 +142,12 @@ class MiniAppDiagnosticView(View):
         # Парсим Telegram данные для диагностики
         telegram_data_parsed = {}
         signature_valid = False
-        init_data = request.GET.get(
-            'tgWebAppData') or request.POST.get('tgWebAppData')
+        # Проверяем оба формата данных
+        init_data = request.GET.get('_auth') or request.POST.get('_auth')
+        if not init_data:
+            init_data = request.GET.get(
+                'tgWebAppData') or request.POST.get('tgWebAppData')
+
         if init_data:
             try:
                 from .telegram_auth import (get_telegram_user_from_webapp,
@@ -149,7 +161,9 @@ class MiniAppDiagnosticView(View):
 
         # Детальная диагностика Telegram запроса
         telegram_detection_details = {
-            'has_tgWebAppData': bool(init_data),
+            'has_auth_data': bool(request.GET.get('_auth') or request.POST.get('_auth')),
+            'has_tgWebAppData': bool(request.GET.get('tgWebAppData') or request.POST.get('tgWebAppData')),
+            'has_any_telegram_data': bool(init_data),
             'user_agent_contains_telegram': 'Telegram' in request.META.get('HTTP_USER_AGENT', ''),
             'has_telegram_secret_token': 'X-Telegram-Bot-Api-Secret-Token' in request.META,
             'referer_from_telegram': any(domain in request.META.get('HTTP_REFERER', '')

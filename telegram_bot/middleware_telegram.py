@@ -28,9 +28,12 @@ class TelegramWebAppMiddleware(CsrfViewMiddleware):
         """
         Проверяем, является ли запрос от Telegram WebApp
         """
-        # Проверяем наличие данных Telegram WebApp
-        init_data = request.GET.get(
-            'tgWebAppData') or request.POST.get('tgWebAppData')
+        # Проверяем наличие данных Telegram WebApp (сначала _auth, потом старый формат)
+        init_data = request.GET.get('_auth') or request.POST.get('_auth')
+        if not init_data:
+            init_data = request.GET.get(
+                'tgWebAppData') or request.POST.get('tgWebAppData')
+
         if init_data:
             return True
 
@@ -78,9 +81,12 @@ class TelegramWebAppSecurityMiddleware:
         """
         Проверяем, является ли запрос от Telegram WebApp
         """
-        # Проверяем наличие данных Telegram WebApp
-        init_data = request.GET.get(
-            'tgWebAppData') or request.POST.get('tgWebAppData')
+        # Проверяем наличие данных Telegram WebApp (сначала _auth, потом старый формат)
+        init_data = request.GET.get('_auth') or request.POST.get('_auth')
+        if not init_data:
+            init_data = request.GET.get(
+                'tgWebAppData') or request.POST.get('tgWebAppData')
+
         if init_data:
             return True
 

@@ -32,9 +32,11 @@ class TestAuthView(View):
             'post_params': dict(request.POST),
         }
 
-        # Проверяем, есть ли данные Telegram WebApp
-        init_data = request.GET.get(
-            'tgWebAppData') or request.POST.get('tgWebAppData')
+        # Проверяем, есть ли данные Telegram WebApp (сначала _auth, потом старый формат)
+        init_data = request.GET.get('_auth') or request.POST.get('_auth')
+        if not init_data:
+            init_data = request.GET.get('tgWebAppData') or request.POST.get('tgWebAppData')
+        
         telegram_data = None
 
         if init_data:

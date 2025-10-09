@@ -6,55 +6,53 @@ import hmac
 import json
 import urllib.parse
 from typing import Dict, Optional
+from operator import itemgetter
 
 from django.conf import settings
 
 
 def verify_telegram_webapp_data(init_data: str, bot_token: str) -> bool:
     """
-    Проверяет подпись данных Telegram WebApp
-
+    Проверяет подпись данных Telegram WebApp согласно документации Aiogram
+    
     Args:
         init_data: Строка с данными от Telegram WebApp
         bot_token: Токен бота для проверки подписи
-
+        
     Returns:
         bool: True если подпись корректна
     """
     try:
-        # Парсим данные
-        parsed_data = urllib.parse.parse_qs(init_data)
-
+        # Парсим данные как query string
+        parsed_data = dict(urllib.parse.parse_qsl(init_data, strict_parsing=True))
+        
         # Извлекаем hash
         if 'hash' not in parsed_data:
             return False
-
-        received_hash = parsed_data['hash'][0]
-
-        # Создаем строку для проверки
-        data_check_string = []
-        for key in sorted(parsed_data.keys()):
-            if key != 'hash':
-                data_check_string.append(f"{key}={parsed_data[key][0]}")
-
-        data_check_string = '\n'.join(data_check_string)
-
+        
+        received_hash = parsed_data.pop('hash')
+        
+        # Создаем строку для проверки (сортированную по ключам)
+        data_check_string = '\n'.join(
+            f"{k}={v}" for k, v in sorted(parsed_data.items(), key=itemgetter(0))
+        )
+        
         # Создаем секретный ключ
         secret_key = hmac.new(
-            "WebAppData".encode('utf-8'),
-            bot_token.encode('utf-8'),
-            hashlib.sha256
+            key=b"WebAppData", 
+            msg=bot_token.encode(), 
+            digestmod=hashlib.sha256
         ).digest()
-
+        
         # Вычисляем hash
         calculated_hash = hmac.new(
-            secret_key,
-            data_check_string.encode('utf-8'),
-            hashlib.sha256
+            key=secret_key,
+            msg=data_check_string.encode(),
+            digestmod=hashlib.sha256
         ).hexdigest()
-
+        
         return hmac.compare_digest(calculated_hash, received_hash)
-
+        
     except Exception:
         return False
 
@@ -62,22 +60,23 @@ def verify_telegram_webapp_data(init_data: str, bot_token: str) -> bool:
 def parse_telegram_webapp_data(init_data: str) -> Optional[Dict]:
     """
     Парсит данные Telegram WebApp и возвращает информацию о пользователе
-
+    
     Args:
         init_data: Строка с данными от Telegram WebApp
-
+        
     Returns:
         Dict с данными пользователя или None при ошибке
     """
     try:
-        parsed_data = urllib.parse.parse_qs(init_data)
-
+        # Парсим данные как query string
+        parsed_data = dict(urllib.parse.parse_qsl(init_data, strict_parsing=True))
+        
         if 'user' not in parsed_data:
             return None
-
-        user_data = json.loads(parsed_data['user'][0])
+        
+        user_data = json.loads(parsed_data['user'])
         return user_data
-
+        
     except Exception:
         return None
 
