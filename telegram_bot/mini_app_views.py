@@ -65,16 +65,47 @@ class TelegramMiniAppView(View):
     def _get_telegram_user(self, request):
         """Получаем пользователя из Telegram данных"""
         try:
-            # В реальном приложении здесь должна быть проверка подписи Telegram
-            # Пока используем простую логику для демонстрации
-            telegram_id = request.GET.get(
-                'user_id') or request.POST.get('user_id')
-            if telegram_id:
-                user = User.objects.filter(telegram_id=telegram_id).first()
-                return user
+            # Получаем данные из Telegram WebApp
+            init_data = request.GET.get(
+                'tgWebAppData') or request.POST.get('tgWebAppData')
+            if not init_data:
+                logger.warning("No tgWebAppData found in request")
+                return None
+
+            # Парсим данные Telegram WebApp с проверкой подписи
+            from .telegram_auth import get_telegram_user_from_webapp
+            user_data = get_telegram_user_from_webapp(
+                init_data, verify_signature=True)
+
+            if not user_data:
+                logger.warning(
+                    "Failed to parse or verify Telegram WebApp data")
+                return None
+
+            telegram_id = user_data.get('id')
+            if not telegram_id:
+                logger.warning("No telegram_id found in user data")
+                return None
+
+            # Ищем или создаем пользователя
+            user = User.objects.filter(telegram_id=telegram_id).first()
+            if not user:
+                # Создаем нового пользователя
+                username = user_data.get('username') or f"tg_{telegram_id}"
+                user = User.objects.create(
+                    telegram_id=telegram_id,
+                    username=username,
+                    first_name=user_data.get('first_name', ''),
+                    last_name=user_data.get('last_name', ''),
+                )
+                logger.info(
+                    f"Created new user: {user.username} (telegram_id: {telegram_id})")
+
+            return user
+
         except Exception as e:
             logger.error(f"Error getting telegram user: {e}")
-        return None
+            return None
 
 
 class MiniAppDiagnosticView(View):
@@ -83,17 +114,38 @@ class MiniAppDiagnosticView(View):
     def get(self, request):
         from django.conf import settings
 
+        # Парсим Telegram данные для диагностики
+        telegram_data_parsed = {}
+        signature_valid = False
+        init_data = request.GET.get(
+            'tgWebAppData') or request.POST.get('tgWebAppData')
+        if init_data:
+            try:
+                from .telegram_auth import (get_telegram_user_from_webapp,
+                                            verify_telegram_webapp_data)
+                telegram_data_parsed = get_telegram_user_from_webapp(
+                    init_data, verify_signature=False)
+                signature_valid = verify_telegram_webapp_data(
+                    init_data, settings.TELEGRAM_BOT_TOKEN)
+            except Exception as e:
+                telegram_data_parsed = {'error': str(e)}
+
         # Собираем информацию о конфигурации
         config_info = {
             'DEBUG': settings.DEBUG,
             'TELEGRAM_MINIAPP_URL': settings.TELEGRAM_MINIAPP_URL,
             'TELEGRAM_MINIAPP_DEBUG_MODE': settings.TELEGRAM_MINIAPP_DEBUG_MODE,
             'ALLOWED_HOSTS': settings.ALLOWED_HOSTS,
+            'TELEGRAM_BOT_TOKEN': settings.TELEGRAM_BOT_TOKEN[:10] + '...' if settings.TELEGRAM_BOT_TOKEN else 'Not set',
             'request_host': request.get_host(),
             'request_method': request.method,
             'user_agent': request.META.get('HTTP_USER_AGENT', ''),
             'is_telegram_request': self._is_telegram_request(request),
-            'telegram_data': request.GET.get('tgWebAppData', 'Not provided'),
+            'telegram_data_raw': init_data[:100] + '...' if init_data and len(init_data) > 100 else init_data,
+            'telegram_data_parsed': telegram_data_parsed,
+            'signature_valid': signature_valid,
+            'all_get_params': dict(request.GET),
+            'all_post_params': dict(request.POST),
         }
 
         # Если это запрос из браузера, показываем диагностическую информацию

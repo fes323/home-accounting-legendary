@@ -22,8 +22,22 @@ class TelegramAuthSerializer(serializers.Serializer):
     hash = serializers.CharField()
 
     def validate(self, attrs):
-        # Здесь должна быть проверка подписи Telegram
-        # Для упрощения пропускаем проверку
+        # Проверяем обязательные поля
+        if not attrs.get('id'):
+            raise serializers.ValidationError("Telegram ID is required")
+
+        if not attrs.get('first_name'):
+            raise serializers.ValidationError("First name is required")
+
+        # Проверяем дату авторизации (не старше 24 часов)
+        import time
+        current_time = int(time.time())
+        auth_date = attrs.get('auth_date', 0)
+        if current_time - auth_date > 86400:  # 24 часа
+            raise serializers.ValidationError("Authorization data is too old")
+
+        # TODO: Добавить проверку подписи Telegram для безопасности
+        # Для этого нужно использовать TELEGRAM_BOT_TOKEN и проверить hash
         return attrs
 
     def create(self, validated_data):
