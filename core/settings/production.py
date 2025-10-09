@@ -63,7 +63,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -135,6 +135,11 @@ TELEGRAM_WEBHOOK_URL = os.getenv('TELEGRAM_WEBHOOK_URL', '')
 TELEGRAM_WEBHOOK_SECRET = os.getenv('TELEGRAM_WEBHOOK_SECRET', '')
 BOT_USERNAME = os.getenv('BOT_USERNAME', '')
 BOT_DESCRIPTION = "Личный помощник для учета финансов"
+
+# Mini App settings
+TELEGRAM_MINIAPP_URL = os.getenv('TELEGRAM_MINIAPP_URL', '')
+TELEGRAM_MINIAPP_DEBUG_MODE = os.getenv(
+    'TELEGRAM_MINIAPP_DEBUG_MODE', 'False').lower() == 'true'
 
 # Webhook settings
 TELEGRAM_WEBHOOK_PATH = '/telegram/webhook/'
