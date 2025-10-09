@@ -23,8 +23,8 @@ class WebAppHandler:
         @self.router.message(Command("app"))
         async def open_web_app(message: Message):
             """Открытие WebApp."""
-            # Используем страницу интеграции для тестирования
-            web_app_url = f"{settings.TELEGRAM_WEBHOOK_URL}/telegram/webapp-integration/"
+            # Используем страницу автоматической авторизации
+            web_app_url = f"{settings.TELEGRAM_WEBHOOK_URL}/telegram/auto-auth/"
 
             await message.answer(
                 "📱 <b>Откройте веб-приложение</b>\n\n"
@@ -35,8 +35,8 @@ class WebAppHandler:
         @self.router.message(F.text == "📱 Веб-приложение")
         async def web_app_button(message: Message):
             """Обработка кнопки веб-приложения."""
-            # Используем страницу интеграции для тестирования
-            web_app_url = f"{settings.TELEGRAM_WEBHOOK_URL}/telegram/webapp-integration/"
+            # Используем страницу автоматической авторизации
+            web_app_url = f"{settings.TELEGRAM_WEBHOOK_URL}/telegram/auto-auth/"
 
             await message.answer(
                 "📱 <b>Откройте веб-приложение</b>\n\n"

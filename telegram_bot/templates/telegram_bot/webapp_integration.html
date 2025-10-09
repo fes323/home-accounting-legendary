@@ -255,7 +255,7 @@
         function redirectToApp() {
             if (initData) {
                 // Перенаправляем на основное приложение с данными авторизации
-                window.location.href = '/telegram/mini-app/?_auth=' + encodeURIComponent(initData);
+                window.location.href = '?_auth=' + encodeURIComponent(initData);
             } else {
                 // Перенаправляем без данных (для тестирования)
                 window.location.href = '/telegram/mini-app/';

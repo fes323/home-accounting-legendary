@@ -1,5 +1,6 @@
 from django.urls import path
 
+from telegram_bot.auto_auth_view import AutoAuthView
 from telegram_bot.mini_app_views import (CategoryCreateView,
                                          CategoryDeleteView, CategoryEditView,
                                          CategoryListView,
@@ -29,6 +30,7 @@ urlpatterns = [
     path('webapp-test/', TelegramWebAppTestView.as_view(), name='webapp_test'),
     path('webapp-integration/', WebAppIntegrationView.as_view(),
          name='webapp_integration'),
+    path('auto-auth/', AutoAuthView.as_view(), name='auto_auth'),
 
     # Mini App endpoints
     path('mini-app/', MiniAppDashboardView.as_view(), name='mini_app_dashboard'),

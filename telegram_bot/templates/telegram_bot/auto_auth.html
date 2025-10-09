@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация - Домашняя бухгалтерия</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .auth-container {
+            text-align: center;
+            max-width: 300px;
+            width: 100%;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--tg-theme-hint-color, #999999);
+            border-top: 4px solid var(--tg-theme-button-color, #007bff);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .error {
+            color: var(--tg-theme-destructive-text-color, #ff3333);
+            background: var(--tg-theme-destructive-bg-color, #ffe6e6);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .success {
+            color: var(--tg-theme-button-text-color, #ffffff);
+            background: var(--tg-theme-button-color, #007bff);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .debug {
+            font-size: 12px;
+            color: var(--tg-theme-hint-color, #999999);
+            margin-top: 20px;
+            text-align: left;
+            background: var(--tg-theme-secondary-bg-color, #f8f9fa);
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="spinner" id="spinner"></div>
+        <div class="status" id="status">Инициализация...</div>
+        <div id="message"></div>
+        <div class="debug" id="debug"></div>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        let tg = window.Telegram.WebApp;
+        let initData = '';
+        let initDataUnsafe = {};
+        
+        // Инициализируем WebApp
+        tg.ready();
+        
+        // Получаем данные
+        initData = tg.initData || '';
+        initDataUnsafe = tg.initDataUnsafe || {};
+        
+        // Обновляем статус
+        function updateStatus(message, type = 'info') {
+            document.getElementById('status').textContent = message;
+            if (type === 'error') {
+                document.getElementById('message').innerHTML = '<div class="error">Ошибка авторизации</div>';
+            } else if (type === 'success') {
+                document.getElementById('message').innerHTML = '<div class="success">Авторизация успешна</div>';
+            }
+        }
+        
+        // Показываем debug информацию
+        function showDebug() {
+            document.getElementById('debug').style.display = 'block';
+            document.getElementById('debug').innerHTML = `
+                <strong>Debug Info:</strong><br>
+                Init Data: ${initData ? 'Available (' + initData.length + ' chars)' : 'Not available'}<br>
+                Platform: ${tg.platform || 'Unknown'}<br>
+                Version: ${tg.version || 'Unknown'}<br>
+                User ID: ${initDataUnsafe.user?.id || 'Unknown'}<br>
+                Username: ${initDataUnsafe.user?.username || 'Unknown'}<br>
+                First Name: ${initDataUnsafe.user?.first_name || 'Unknown'}
+            `;
+        }
+        
+        // Основная логика авторизации
+        async function performAuth() {
+            try {
+                updateStatus('Проверка данных...');
+                
+                if (!initData) {
+                    updateStatus('Данные авторизации не найдены', 'error');
+                    showDebug();
+                    return;
+                }
+                
+                updateStatus('Авторизация...');
+                
+                // Отправляем данные на сервер для авторизации
+                const response = await fetch('/telegram/webapp-auth/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: '_auth=' + encodeURIComponent(initData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok && data.user) {
+                    updateStatus('Авторизация успешна', 'success');
+                    
+                    // Перенаправляем на основное приложение с данными авторизации
+                    setTimeout(() => {
+                        window.location.href = '/telegram/mini-app/?_auth=' + encodeURIComponent(initData);
+                    }, 1000);
+                } else {
+                    updateStatus('Ошибка авторизации: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                    showDebug();
+                }
+                
+            } catch (error) {
+                updateStatus('Ошибка сети: ' + error.message, 'error');
+                showDebug();
+            }
+        }
+        
+        // Запускаем авторизацию при загрузке страницы
+        window.addEventListener('load', function() {
+            // Небольшая задержка для инициализации Telegram WebApp
+            setTimeout(performAuth, 500);
+        });
+        
+        // Обработка ошибок
+        window.addEventListener('error', function(e) {
+            updateStatus('Ошибка JavaScript: ' + e.message, 'error');
+            showDebug();
+        });
+        
+        // Показываем debug информацию при нажатии на статус (для отладки)
+        document.getElementById('status').addEventListener('click', showDebug);
+    </script>
+</body>
+</html>
