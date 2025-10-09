@@ -132,6 +132,8 @@ BOT_DESCRIPTION = "Личный помощник для учета финанс�
 
 # Mini App settings
 TELEGRAM_MINIAPP_URL = os.getenv('TELEGRAM_MINIAPP_URL', '')
+TELEGRAM_MINIAPP_DEBUG_MODE = os.getenv(
+    'TELEGRAM_MINIAPP_DEBUG_MODE', 'False').lower() == 'true'
 
 # Webhook settings
 TELEGRAM_WEBHOOK_PATH = '/telegram/webhook/'

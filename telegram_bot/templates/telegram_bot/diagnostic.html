@@ -1,0 +1,140 @@
+{% extends 'telegram_bot/base.html' %}
+
+{% block title %}Диагностика Mini App - Домашняя бухгалтерия{% endblock %}
+{% block header %}Диагностика Mini App{% endblock %}
+
+{% block content %}
+<div class="tg-fade-in">
+    <div class="tg-card">
+        <h5 class="tg-mb-2">🔧 Диагностическая информация</h5>
+        <p class="tg-text-muted">Эта страница показывает текущую конфигурацию Mini App</p>
+    </div>
+
+    <div class="tg-card">
+        <h6 class="tg-mb-2">📋 Конфигурация</h6>
+        <div class="table-responsive">
+            <table class="tg-table">
+                <tbody>
+                    <tr>
+                        <td><strong>DEBUG режим</strong></td>
+                        <td>
+                            <span class="badge {% if config_info.DEBUG %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ config_info.DEBUG|yesno:"Включен,Выключен" }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>URL Mini App</strong></td>
+                        <td>{{ config_info.TELEGRAM_MINIAPP_URL|default:"Не настроен" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Режим отладки</strong></td>
+                        <td>
+                            <span class="badge {% if config_info.TELEGRAM_MINIAPP_DEBUG_MODE %}bg-warning{% else %}bg-secondary{% endif %}">
+                                {{ config_info.TELEGRAM_MINIAPP_DEBUG_MODE|yesno:"Включен,Выключен" }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Разрешенные хосты</strong></td>
+                        <td>{{ config_info.ALLOWED_HOSTS|join:", " }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="tg-card">
+        <h6 class="tg-mb-2">🌐 Информация о запросе</h6>
+        <div class="table-responsive">
+            <table class="tg-table">
+                <tbody>
+                    <tr>
+                        <td><strong>Хост запроса</strong></td>
+                        <td>{{ config_info.request_host }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Метод</strong></td>
+                        <td>{{ config_info.request_method }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>User Agent</strong></td>
+                        <td class="small">{{ config_info.user_agent|truncatechars:50 }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Telegram запрос</strong></td>
+                        <td>
+                            <span class="badge {% if config_info.is_telegram_request %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ config_info.is_telegram_request|yesno:"Да,Нет" }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Telegram данные</strong></td>
+                        <td class="small">{{ config_info.telegram_data }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if not config_info.is_telegram_request %}
+    <div class="tg-card">
+        <h6 class="tg-text-warning tg-mb-2">⚠️ Предупреждение</h6>
+        <p class="tg-text-muted">
+            Вы открыли Mini App из браузера, а не из Telegram. 
+            Для полноценной работы Mini App должен быть открыт через Telegram бота.
+        </p>
+        
+        {% if config_info.TELEGRAM_MINIAPP_DEBUG_MODE %}
+        <div class="tg-alert tg-alert-info">
+            <strong>Режим отладки включен:</strong> Mini App работает с тестовым пользователем.
+        </div>
+        {% else %}
+        <div class="tg-alert tg-alert-danger">
+            <strong>Режим отладки выключен:</strong> Mini App требует данные от Telegram.
+            Включите <code>TELEGRAM_MINIAPP_DEBUG_MODE=True</code> в .env для тестирования.
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="tg-card">
+        <h6 class="tg-mb-2">🚀 Быстрые действия</h6>
+        <div class="row g-2">
+            <div class="col-6">
+                <a href="{% url 'telegram_bot:mini_app_dashboard' %}" class="btn tg-button w-100">
+                    <i class="bi bi-house-door"></i> Главная
+                </a>
+            </div>
+            <div class="col-6">
+                <a href="{% url 'telegram_bot:transactions' %}" class="btn tg-button-secondary w-100">
+                    <i class="bi bi-list-ul"></i> Транзакции
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="tg-card">
+        <h6 class="tg-mb-2">📝 Инструкции по настройке</h6>
+        <div class="small tg-text-muted">
+            <ol>
+                <li>Убедитесь, что в файле <code>.env</code> указан правильный <code>TELEGRAM_MINIAPP_URL</code></li>
+                <li>Для тестирования из браузера включите <code>TELEGRAM_MINIAPP_DEBUG_MODE=True</code></li>
+                <li>Для продакшена убедитесь, что <code>TELEGRAM_MINIAPP_DEBUG_MODE=False</code></li>
+                <li>Домен должен быть в списке <code>ALLOWED_HOSTS</code></li>
+                <li>Mini App должен открываться через Telegram бота командой <code>/app</code></li>
+            </ol>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Автоматическое обновление страницы каждые 30 секунд
+setTimeout(function() {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

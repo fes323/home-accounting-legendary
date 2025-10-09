@@ -26,6 +26,23 @@ class TelegramMiniAppView(View):
     """Базовый класс для Telegram Mini App views"""
 
     def dispatch(self, request, *args, **kwargs):
+        from django.conf import settings
+
+        # В режиме отладки разрешаем доступ без Telegram данных
+        if settings.TELEGRAM_MINIAPP_DEBUG_MODE and not self._is_telegram_request(request):
+            # Создаем тестового пользователя для разработки
+            from users.models.user import User
+            test_user, created = User.objects.get_or_create(
+                telegram_id=123456789,  # Тестовый ID
+                defaults={
+                    'username': 'test_user',
+                    'first_name': 'Test',
+                    'last_name': 'User'
+                }
+            )
+            request.user = test_user
+            return super().dispatch(request, *args, **kwargs)
+
         # Проверяем, что запрос приходит из Telegram
         if not self._is_telegram_request(request):
             return JsonResponse({'error': 'Unauthorized'}, status=401)
@@ -58,6 +75,41 @@ class TelegramMiniAppView(View):
         except Exception as e:
             logger.error(f"Error getting telegram user: {e}")
         return None
+
+
+class MiniAppDiagnosticView(View):
+    """Диагностическая страница для проверки конфигурации Mini App"""
+
+    def get(self, request):
+        from django.conf import settings
+
+        # Собираем информацию о конфигурации
+        config_info = {
+            'DEBUG': settings.DEBUG,
+            'TELEGRAM_MINIAPP_URL': settings.TELEGRAM_MINIAPP_URL,
+            'TELEGRAM_MINIAPP_DEBUG_MODE': settings.TELEGRAM_MINIAPP_DEBUG_MODE,
+            'ALLOWED_HOSTS': settings.ALLOWED_HOSTS,
+            'request_host': request.get_host(),
+            'request_method': request.method,
+            'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+            'is_telegram_request': self._is_telegram_request(request),
+            'telegram_data': request.GET.get('tgWebAppData', 'Not provided'),
+        }
+
+        # Если это запрос из браузера, показываем диагностическую информацию
+        if not self._is_telegram_request(request):
+            return render(request, 'telegram_bot/diagnostic.html', {
+                'config_info': config_info
+            })
+
+        # Если это запрос из Telegram, перенаправляем на главную
+        return redirect('telegram_bot:mini_app_dashboard')
+
+    def _is_telegram_request(self, request):
+        """Проверяем, что запрос приходит из Telegram"""
+        init_data = request.GET.get(
+            'tgWebAppData') or request.POST.get('tgWebAppData')
+        return bool(init_data)
 
 
 class MiniAppDashboardView(TelegramMiniAppView):

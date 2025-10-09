@@ -4,6 +4,7 @@ from telegram_bot.mini_app_views import (CategoryCreateView,
                                          CategoryDeleteView, CategoryEditView,
                                          CategoryListView,
                                          MiniAppDashboardView,
+                                         MiniAppDiagnosticView,
                                          TransactionCreateView,
                                          TransactionDeleteView,
                                          TransactionEditView,
@@ -21,6 +22,8 @@ urlpatterns = [
 
     # Mini App endpoints
     path('mini-app/', MiniAppDashboardView.as_view(), name='mini_app_dashboard'),
+    path('mini-app/diagnostic/', MiniAppDiagnosticView.as_view(),
+         name='mini_app_diagnostic'),
 
     # Transaction endpoints
     path('mini-app/transactions/',
