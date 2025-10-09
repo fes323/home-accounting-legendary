@@ -1,0 +1,139 @@
+{% extends 'telegram_bot/base.html' %}
+
+{% block title %}Главная - Домашняя бухгалтерия{% endblock %}
+{% block header %}Главная{% endblock %}
+
+{% block content %}
+<div class="tg-fade-in">
+    <!-- Статистика -->
+    <div class="tg-stats">
+        <div class="tg-stat-card">
+            <div class="tg-stat-value tg-text-success">+{{ total_income|floatformat:0 }} ₽</div>
+            <div class="tg-stat-label">Доходы за месяц</div>
+        </div>
+        <div class="tg-stat-card">
+            <div class="tg-stat-value tg-text-danger">-{{ total_expense|floatformat:0 }} ₽</div>
+            <div class="tg-stat-label">Расходы за месяц</div>
+        </div>
+        <div class="tg-stat-card">
+            <div class="tg-stat-value {% if balance >= 0 %}tg-text-success{% else %}tg-text-danger{% endif %}">
+                {{ balance|floatformat:0 }} ₽
+            </div>
+            <div class="tg-stat-label">Баланс</div>
+        </div>
+    </div>
+
+    <!-- Быстрые действия -->
+    <div class="tg-card">
+        <h5 class="tg-mb-2">Быстрые действия</h5>
+        <div class="row g-2">
+            <div class="col-6">
+                <a href="{% url 'telegram_bot:transaction_create' %}?type=IN" class="btn tg-button-success w-100">
+                    <i class="bi bi-plus-circle"></i> Доход
+                </a>
+            </div>
+            <div class="col-6">
+                <a href="{% url 'telegram_bot:transaction_create' %}?type=EX" class="btn tg-button-danger w-100">
+                    <i class="bi bi-dash-circle"></i> Расход
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Кошельки -->
+    {% if wallets %}
+    <div class="tg-card">
+        <div class="d-flex justify-content-between align-items-center tg-mb-2">
+            <h5 class="tg-mb-0">Кошельки</h5>
+            <a href="{% url 'telegram_bot:wallets' %}" class="btn btn-sm tg-button-secondary">
+                Все кошельки
+            </a>
+        </div>
+        <div class="row">
+            {% for wallet in wallets %}
+            <div class="col-6 col-md-4 mb-2">
+                <div class="tg-card tg-mb-0" style="padding: 12px;">
+                    <div class="fw-bold">{{ wallet.title }}</div>
+                    <div class="tg-text-muted small">{{ wallet.currency.char_code }}</div>
+                    <div class="fw-bold {% if wallet.balance >= 0 %}tg-text-success{% else %}tg-text-danger{% endif %}">
+                        {{ wallet.balance|floatformat:2 }} ₽
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Последние транзакции -->
+    {% if recent_transactions %}
+    <div class="tg-card">
+        <div class="d-flex justify-content-between align-items-center tg-mb-2">
+            <h5 class="tg-mb-0">Последние транзакции</h5>
+            <a href="{% url 'telegram_bot:transactions' %}" class="btn btn-sm tg-button-secondary">
+                Все транзакции
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="tg-table">
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Описание</th>
+                        <th>Сумма</th>
+                        <th>Кошелек</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in recent_transactions %}
+                    <tr>
+                        <td class="small">{{ transaction.date|date:"d.m" }}</td>
+                        <td>
+                            <div class="small">{{ transaction.description|truncatechars:20 }}</div>
+                            {% if transaction.category %}
+                            <div class="tg-text-muted" style="font-size: 11px;">{{ transaction.category.title }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="{% if transaction.t_type == 'IN' %}tg-text-success{% else %}tg-text-danger{% endif %} fw-bold">
+                            {% if transaction.t_type == 'IN' %}+{% else %}-{% endif %}{{ transaction.amount|floatformat:0 }} ₽
+                        </td>
+                        <td class="small">{{ transaction.wallet.title }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Пустое состояние -->
+    {% if not wallets and not recent_transactions %}
+    <div class="tg-card tg-text-center">
+        <i class="bi bi-wallet2" style="font-size: 48px; color: var(--tg-theme-hint-color);"></i>
+        <h5 class="tg-mt-2">Добро пожаловать!</h5>
+        <p class="tg-text-muted">Начните с создания кошелька и добавления первой транзакции.</p>
+        <div class="row g-2">
+            <div class="col-6">
+                <a href="{% url 'telegram_bot:wallet_create' %}" class="btn tg-button w-100">
+                    <i class="bi bi-plus"></i> Создать кошелек
+                </a>
+            </div>
+            <div class="col-6">
+                <a href="{% url 'telegram_bot:transaction_create' %}" class="btn tg-button-secondary w-100">
+                    <i class="bi bi-plus"></i> Добавить транзакцию
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Обновление статистики каждые 30 секунд
+    setInterval(function() {
+        // Здесь можно добавить AJAX запрос для обновления статистики
+    }, 30000);
+</script>
+{% endblock %}

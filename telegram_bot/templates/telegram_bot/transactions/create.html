@@ -1,0 +1,165 @@
+{% extends 'telegram_bot/base.html' %}
+
+{% block title %}Добавить транзакцию - Домашняя бухгалтерия{% endblock %}
+{% block header %}Добавить транзакцию{% endblock %}
+{% block show_back_button %}tg.BackButton.show();{% endblock %}
+
+{% block content %}
+<div class="tg-fade-in">
+    <div class="tg-card">
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Тип транзакции -->
+            <div class="tg-form-group">
+                <label class="tg-form-label">Тип транзакции</label>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <input type="radio" class="btn-check" name="t_type" id="income" value="IN" 
+                               {% if request.GET.type == 'IN' or not request.GET.type %}checked{% endif %}>
+                        <label class="btn tg-button-success w-100" for="income">
+                            <i class="bi bi-plus-circle"></i> Доход
+                        </label>
+                    </div>
+                    <div class="col-6">
+                        <input type="radio" class="btn-check" name="t_type" id="expense" value="EX"
+                               {% if request.GET.type == 'EX' %}checked{% endif %}>
+                        <label class="btn tg-button-danger w-100" for="expense">
+                            <i class="bi bi-dash-circle"></i> Расход
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Сумма -->
+            <div class="tg-form-group">
+                <label for="amount" class="tg-form-label">Сумма *</label>
+                <input type="number" class="tg-form-control" id="amount" name="amount" 
+                       step="0.01" min="0" required placeholder="0.00">
+            </div>
+
+            <!-- Кошелек -->
+            <div class="tg-form-group">
+                <label for="wallet" class="tg-form-label">Кошелек *</label>
+                <select class="tg-form-control" id="wallet" name="wallet" required>
+                    <option value="">Выберите кошелек</option>
+                    {% for wallet in wallets %}
+                    <option value="{{ wallet.uuid }}">{{ wallet.title }} ({{ wallet.balance|floatformat:2 }} ₽)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Категория -->
+            <div class="tg-form-group">
+                <label for="category" class="tg-form-label">Категория</label>
+                <select class="tg-form-control" id="category" name="category">
+                    <option value="">Без категории</option>
+                    {% for category in categories %}
+                    <option value="{{ category.uuid }}">{{ category.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Дата -->
+            <div class="tg-form-group">
+                <label for="date" class="tg-form-label">Дата</label>
+                <input type="date" class="tg-form-control" id="date" name="date" 
+                       value="{{ today|date:'Y-m-d' }}">
+            </div>
+
+            <!-- Налог -->
+            <div class="tg-form-group">
+                <label for="tax" class="tg-form-label">Налог (%)</label>
+                <input type="number" class="tg-form-control" id="tax" name="tax" 
+                       step="0.01" min="0" max="100" value="0" placeholder="0.00">
+            </div>
+
+            <!-- Описание -->
+            <div class="tg-form-group">
+                <label for="description" class="tg-form-label">Описание</label>
+                <textarea class="tg-form-control" id="description" name="description" 
+                          rows="3" placeholder="Описание транзакции"></textarea>
+            </div>
+
+            <!-- Кнопки -->
+            <div class="row g-2">
+                <div class="col-6">
+                    <button type="submit" class="btn tg-button w-100">
+                        <i class="bi bi-check"></i> Создать
+                    </button>
+                </div>
+                <div class="col-6">
+                    <a href="{% url 'telegram_bot:transactions' %}" class="btn tg-button-secondary w-100">
+                        <i class="bi bi-x"></i> Отмена
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Подсказки -->
+    <div class="tg-card">
+        <h6 class="tg-mb-2">Подсказки</h6>
+        <ul class="list-unstyled small tg-text-muted">
+            <li><i class="bi bi-info-circle"></i> Сумма должна быть больше 0</li>
+            <li><i class="bi bi-info-circle"></i> Кошелек обязателен для выбора</li>
+            <li><i class="bi bi-info-circle"></i> Категория помогает в аналитике</li>
+            <li><i class="bi bi-info-circle"></i> Налог рассчитывается автоматически</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Установка текущей даты по умолчанию
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('date');
+    if (!dateInput.value) {
+        const today = new Date();
+        dateInput.value = today.toISOString().split('T')[0];
+    }
+});
+
+// Валидация формы
+document.querySelector('form').addEventListener('submit', function(e) {
+    const amount = parseFloat(document.getElementById('amount').value);
+    const wallet = document.getElementById('wallet').value;
+    
+    if (!amount || amount <= 0) {
+        e.preventDefault();
+        alert('Сумма должна быть больше 0');
+        return;
+    }
+    
+    if (!wallet) {
+        e.preventDefault();
+        alert('Выберите кошелек');
+        return;
+    }
+});
+
+// Автоматическое обновление баланса кошелька при выборе
+document.getElementById('wallet').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    if (selectedOption.value) {
+        const balanceText = selectedOption.text.match(/\(([^)]+)\)/);
+        if (balanceText) {
+            console.log('Баланс кошелька:', balanceText[1]);
+        }
+    }
+});
+
+// Форматирование суммы
+document.getElementById('amount').addEventListener('input', function() {
+    let value = this.value;
+    if (value && !isNaN(value)) {
+        // Ограничиваем до 2 знаков после запятой
+        const parts = value.split('.');
+        if (parts[1] && parts[1].length > 2) {
+            this.value = parts[0] + '.' + parts[1].substring(0, 2);
+        }
+    }
+});
+</script>
+{% endblock %}

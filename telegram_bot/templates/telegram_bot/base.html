@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <title>{% block title %}Домашняя бухгалтерия{% endblock %}</title>
+    
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Bootstrap CSS для responsive дизайна -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <style>
+        /* Telegram WebApp стили */
+        :root {
+            --tg-theme-bg-color: #ffffff;
+            --tg-theme-text-color: #000000;
+            --tg-theme-hint-color: #999999;
+            --tg-theme-link-color: #2481cc;
+            --tg-theme-button-color: #2481cc;
+            --tg-theme-button-text-color: #ffffff;
+            --tg-theme-secondary-bg-color: #f1f1f1;
+        }
+        
+        body {
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        /* Адаптивность для мобильных устройств */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0;
+                max-width: 100%;
+            }
+            
+            .card {
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+            }
+            
+            .btn {
+                padding: 12px 16px;
+                font-size: 16px;
+            }
+            
+            .form-control {
+                padding: 12px 16px;
+                font-size: 16px;
+            }
+            
+            .table {
+                font-size: 14px;
+            }
+            
+            .table td, .table th {
+                padding: 8px 4px;
+            }
+        }
+        
+        /* Стили для Telegram WebApp */
+        .tg-header {
+            background-color: var(--tg-theme-secondary-bg-color);
+            padding: 16px;
+            text-align: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .tg-button {
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .tg-button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        .tg-button:active {
+            transform: translateY(0);
+        }
+        
+        .tg-button-secondary {
+            background-color: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+        }
+        
+        .tg-button-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .tg-button-success {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        /* Навигация */
+        .tg-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--tg-theme-bg-color);
+            border-top: 1px solid #e0e0e0;
+            padding: 8px 0;
+            z-index: 1000;
+        }
+        
+        .tg-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 16px;
+            text-decoration: none;
+            color: var(--tg-theme-hint-color);
+            font-size: 12px;
+            transition: color 0.2s ease;
+        }
+        
+        .tg-nav-item.active {
+            color: var(--tg-theme-button-color);
+        }
+        
+        .tg-nav-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        /* Контент с отступом для навигации */
+        .tg-content {
+            padding-bottom: 80px;
+        }
+        
+        /* Карточки */
+        .tg-card {
+            background-color: var(--tg-theme-bg-color);
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Формы */
+        .tg-form-group {
+            margin-bottom: 16px;
+        }
+        
+        .tg-form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--tg-theme-text-color);
+        }
+        
+        .tg-form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+        }
+        
+        .tg-form-control:focus {
+            outline: none;
+            border-color: var(--tg-theme-button-color);
+            box-shadow: 0 0 0 2px rgba(36, 129, 204, 0.2);
+        }
+        
+        /* Алерты */
+        .tg-alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .tg-alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .tg-alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .tg-alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        /* Таблицы */
+        .tg-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: var(--tg-theme-bg-color);
+        }
+        
+        .tg-table th,
+        .tg-table td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .tg-table th {
+            background-color: var(--tg-theme-secondary-bg-color);
+            font-weight: 600;
+        }
+        
+        /* Статистика */
+        .tg-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .tg-stat-card {
+            background-color: var(--tg-theme-bg-color);
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .tg-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .tg-stat-label {
+            font-size: 14px;
+            color: var(--tg-theme-hint-color);
+        }
+        
+        /* Утилиты */
+        .tg-text-center { text-align: center; }
+        .tg-text-right { text-align: right; }
+        .tg-text-success { color: #28a745; }
+        .tg-text-danger { color: #dc3545; }
+        .tg-text-muted { color: var(--tg-theme-hint-color); }
+        
+        .tg-mb-0 { margin-bottom: 0; }
+        .tg-mb-1 { margin-bottom: 8px; }
+        .tg-mb-2 { margin-bottom: 16px; }
+        .tg-mb-3 { margin-bottom: 24px; }
+        
+        .tg-mt-0 { margin-top: 0; }
+        .tg-mt-1 { margin-top: 8px; }
+        .tg-mt-2 { margin-top: 16px; }
+        .tg-mt-3 { margin-top: 24px; }
+        
+        /* Анимации */
+        .tg-fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Загрузка */
+        .tg-loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+        
+        .tg-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--tg-theme-button-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Telegram WebApp инициализация -->
+    <script>
+        // Инициализация Telegram WebApp
+        let tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        
+        // Настройка темы
+        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
+        document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999');
+        document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color || '#2481cc');
+        document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#2481cc');
+        document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color || '#f1f1f1');
+        
+        // Обработка кнопки "Назад"
+        tg.onEvent('backButtonClicked', function() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                tg.close();
+            }
+        });
+        
+        // Показать кнопку "Назад" если нужно
+        {% block show_back_button %}
+        tg.BackButton.show();
+        {% endblock %}
+    </script>
+
+    <div class="container-fluid tg-content">
+        <!-- Заголовок -->
+        <div class="tg-header">
+            <h1 class="h4 tg-mb-0">{% block header %}{% endblock %}</h1>
+        </div>
+
+        <!-- Сообщения -->
+        {% if messages %}
+            <div class="container mt-3">
+                {% for message in messages %}
+                    <div class="tg-alert tg-alert-{{ message.tags }} tg-fade-in">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Основной контент -->
+        <div class="container mt-3">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- Нижняя навигация -->
+    <nav class="tg-nav">
+        <div class="container-fluid">
+            <div class="row text-center">
+                <div class="col">
+                    <a href="{% url 'telegram_bot:mini_app_dashboard' %}" class="tg-nav-item {% if request.resolver_match.url_name == 'mini_app_dashboard' %}active{% endif %}">
+                        <i class="bi bi-house-door"></i>
+                        Главная
+                    </a>
+                </div>
+                <div class="col">
+                    <a href="{% url 'telegram_bot:transactions' %}" class="tg-nav-item {% if 'transaction' in request.resolver_match.url_name %}active{% endif %}">
+                        <i class="bi bi-list-ul"></i>
+                        Транзакции
+                    </a>
+                </div>
+                <div class="col">
+                    <a href="{% url 'telegram_bot:wallets' %}" class="tg-nav-item {% if 'wallet' in request.resolver_match.url_name %}active{% endif %}">
+                        <i class="bi bi-wallet2"></i>
+                        Кошельки
+                    </a>
+                </div>
+                <div class="col">
+                    <a href="{% url 'telegram_bot:categories' %}" class="tg-nav-item {% if 'category' in request.resolver_match.url_name %}active{% endif %}">
+                        <i class="bi bi-tags"></i>
+                        Категории
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Дополнительные скрипты -->
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

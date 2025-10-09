@@ -1,0 +1,151 @@
+{% extends 'telegram_bot/base.html' %}
+
+{% block title %}Редактировать кошелек - Домашняя бухгалтерия{% endblock %}
+{% block header %}Редактировать кошелек{% endblock %}
+{% block show_back_button %}tg.BackButton.show();{% endblock %}
+
+{% block content %}
+<div class="tg-fade-in">
+    <div class="tg-card">
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Название -->
+            <div class="tg-form-group">
+                <label for="title" class="tg-form-label">Название кошелька *</label>
+                <input type="text" class="tg-form-control" id="title" name="title" 
+                       required value="{{ wallet.title }}" placeholder="Например: Основной кошелек">
+            </div>
+
+            <!-- Валюта -->
+            <div class="tg-form-group">
+                <label for="currency" class="tg-form-label">Валюта *</label>
+                <select class="tg-form-control" id="currency" name="currency" required>
+                    <option value="">Выберите валюту</option>
+                    {% for currency in currencies %}
+                    <option value="{{ currency.id }}" {% if currency.id == wallet.currency.id %}selected{% endif %}>
+                        {{ currency.char_code }} - {{ currency.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Баланс -->
+            <div class="tg-form-group">
+                <label for="balance" class="tg-form-label">Текущий баланс</label>
+                <input type="number" class="tg-form-control" id="balance" name="balance" 
+                       step="0.01" value="{{ wallet.balance }}" placeholder="0.00">
+                <div class="small tg-text-muted">
+                    Внимание: изменение баланса может повлиять на статистику
+                </div>
+            </div>
+
+            <!-- Семейный доступ -->
+            <div class="tg-form-group">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="is_family_access" name="is_family_access"
+                           {% if wallet.is_family_access %}checked{% endif %}>
+                    <label class="form-check-label" for="is_family_access">
+                        Семейный доступ
+                    </label>
+                </div>
+                <div class="small tg-text-muted">
+                    Кошелек будет доступен всем членам семьи
+                </div>
+            </div>
+
+            <!-- Описание -->
+            <div class="tg-form-group">
+                <label for="description" class="tg-form-label">Описание</label>
+                <textarea class="tg-form-control" id="description" name="description" 
+                          rows="3" placeholder="Описание кошелька (необязательно)">{{ wallet.description }}</textarea>
+            </div>
+
+            <!-- Информация о кошельке -->
+            <div class="tg-card tg-mb-2" style="background-color: var(--tg-theme-secondary-bg-color);">
+                <div class="row small tg-text-muted">
+                    <div class="col-6">
+                        <strong>Создан:</strong><br>
+                        {{ wallet.created_at|date:"d.m.Y H:i" }}
+                    </div>
+                    <div class="col-6">
+                        <strong>Обновлен:</strong><br>
+                        {{ wallet.updated_at|date:"d.m.Y H:i" }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Кнопки -->
+            <div class="row g-2">
+                <div class="col-6">
+                    <button type="submit" class="btn tg-button w-100">
+                        <i class="bi bi-check"></i> Сохранить
+                    </button>
+                </div>
+                <div class="col-6">
+                    <a href="{% url 'telegram_bot:wallets' %}" class="btn tg-button-secondary w-100">
+                        <i class="bi bi-x"></i> Отмена
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Кнопка удаления -->
+    <div class="tg-card">
+        <h6 class="tg-text-danger tg-mb-2">Опасная зона</h6>
+        <p class="small tg-text-muted tg-mb-2">
+            Удаление кошелька нельзя отменить. Нельзя удалить кошелек с транзакциями.
+        </p>
+        <button type="button" class="btn tg-button-danger w-100" onclick="deleteWallet()">
+            <i class="bi bi-trash"></i> Удалить кошелек
+        </button>
+    </div>
+</div>
+
+<!-- Форма удаления -->
+<form id="deleteForm" method="post" action="{% url 'telegram_bot:wallet_delete' wallet.uuid %}" style="display: none;">
+    {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Валидация формы
+document.querySelector('form').addEventListener('submit', function(e) {
+    const title = document.getElementById('title').value.trim();
+    const currency = document.getElementById('currency').value;
+    
+    if (!title) {
+        e.preventDefault();
+        alert('Введите название кошелька');
+        return;
+    }
+    
+    if (!currency) {
+        e.preventDefault();
+        alert('Выберите валюту');
+        return;
+    }
+});
+
+// Форматирование баланса
+document.getElementById('balance').addEventListener('input', function() {
+    let value = this.value;
+    if (value && !isNaN(value)) {
+        // Ограничиваем до 2 знаков после запятой
+        const parts = value.split('.');
+        if (parts[1] && parts[1].length > 2) {
+            this.value = parts[0] + '.' + parts[1].substring(0, 2);
+        }
+    }
+});
+
+// Удаление кошелька
+function deleteWallet() {
+    if (confirm('Вы уверены, что хотите удалить этот кошелек?\n\nВнимание: нельзя удалить кошелек с транзакциями. Это действие нельзя отменить.')) {
+        document.getElementById('deleteForm').submit();
+    }
+}
+</script>
+{% endblock %}

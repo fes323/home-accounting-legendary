@@ -1,0 +1,129 @@
+{% extends 'telegram_bot/base.html' %}
+
+{% block title %}Создать категорию - Домашняя бухгалтерия{% endblock %}
+{% block header %}Создать категорию{% endblock %}
+{% block show_back_button %}tg.BackButton.show();{% endblock %}
+
+{% block content %}
+<div class="tg-fade-in">
+    <div class="tg-card">
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Название -->
+            <div class="tg-form-group">
+                <label for="title" class="tg-form-label">Название категории *</label>
+                <input type="text" class="tg-form-control" id="title" name="title" 
+                       required placeholder="Например: Продукты">
+            </div>
+
+            <!-- Родительская категория -->
+            <div class="tg-form-group">
+                <label for="parent" class="tg-form-label">Родительская категория</label>
+                <select class="tg-form-control" id="parent" name="parent">
+                    <option value="">Корневая категория</option>
+                    {% for category in categories %}
+                    <option value="{{ category.uuid }}">{{ category.title }}</option>
+                    {% endfor %}
+                </select>
+                <div class="small tg-text-muted">
+                    Выберите родительскую категорию для создания подкатегории
+                </div>
+            </div>
+
+            <!-- Описание -->
+            <div class="tg-form-group">
+                <label for="description" class="tg-form-label">Описание</label>
+                <textarea class="tg-form-control" id="description" name="description" 
+                          rows="3" placeholder="Описание категории (необязательно)"></textarea>
+            </div>
+
+            <!-- Кнопки -->
+            <div class="row g-2">
+                <div class="col-6">
+                    <button type="submit" class="btn tg-button w-100">
+                        <i class="bi bi-check"></i> Создать
+                    </button>
+                </div>
+                <div class="col-6">
+                    <a href="{% url 'telegram_bot:categories' %}" class="btn tg-button-secondary w-100">
+                        <i class="bi bi-x"></i> Отмена
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Подсказки -->
+    <div class="tg-card">
+        <h6 class="tg-mb-2">Подсказки</h6>
+        <ul class="list-unstyled small tg-text-muted">
+            <li><i class="bi bi-info-circle"></i> Название должно быть уникальным в рамках родительской категории</li>
+            <li><i class="bi bi-info-circle"></i> Используйте иерархию для лучшей организации</li>
+            <li><i class="bi bi-info-circle"></i> Пример: "Продукты" → "Молочные продукты"</li>
+            <li><i class="bi bi-info-circle"></i> Категории помогают в аналитике расходов</li>
+        </ul>
+    </div>
+
+    <!-- Примеры категорий -->
+    <div class="tg-card">
+        <h6 class="tg-mb-2">Примеры категорий</h6>
+        <div class="row">
+            <div class="col-6">
+                <div class="small tg-text-muted">
+                    <strong>Доходы:</strong><br>
+                    • Зарплата<br>
+                    • Премия<br>
+                    • Подарки<br>
+                    • Инвестиции
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="small tg-text-muted">
+                    <strong>Расходы:</strong><br>
+                    • Продукты<br>
+                    • Транспорт<br>
+                    • Развлечения<br>
+                    • Здоровье
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Валидация формы
+document.querySelector('form').addEventListener('submit', function(e) {
+    const title = document.getElementById('title').value.trim();
+    
+    if (!title) {
+        e.preventDefault();
+        alert('Введите название категории');
+        return;
+    }
+});
+
+// Автофокус на поле названия
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('title').focus();
+});
+
+// Динамическое обновление подсказок
+document.getElementById('parent').addEventListener('change', function() {
+    const parentSelect = this;
+    const titleInput = document.getElementById('title');
+    
+    if (parentSelect.value) {
+        const selectedOption = parentSelect.options[parentSelect.selectedIndex];
+        const parentTitle = selectedOption.text;
+        
+        // Обновляем placeholder
+        titleInput.placeholder = `Подкатегория для "${parentTitle}"`;
+    } else {
+        titleInput.placeholder = 'Например: Продукты';
+    }
+});
+</script>
+{% endblock %}

@@ -12,10 +12,8 @@ apt update && apt upgrade -y
 echo "🐍 Установка Python 3.11..."
 apt install -y python3.11 python3.11-venv python3.11-dev python3-pip
 
-# Установка Node.js 18
-echo "📱 Установка Node.js 18..."
-curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-apt install -y nodejs
+# Node.js больше не нужен для Django Mini App
+echo "📱 Node.js больше не требуется для Django Mini App..."
 
 # Установка PostgreSQL
 echo "🐘 Установка PostgreSQL..."

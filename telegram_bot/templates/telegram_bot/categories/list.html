@@ -1,0 +1,120 @@
+{% extends 'telegram_bot/base.html' %}
+
+{% block title %}Категории - Домашняя бухгалтерия{% endblock %}
+{% block header %}Категории{% endblock %}
+
+{% block content %}
+<div class="tg-fade-in">
+    <!-- Кнопка добавления -->
+    <div class="tg-card">
+        <a href="{% url 'telegram_bot:category_create' %}" class="btn tg-button w-100">
+            <i class="bi bi-plus"></i> Создать категорию
+        </a>
+    </div>
+
+    <!-- Список категорий -->
+    {% if categories %}
+    <div class="tg-card">
+        <div class="row">
+            {% for category in categories %}
+            <div class="col-12 col-md-6 mb-3">
+                <div class="tg-card tg-mb-0">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h6 class="tg-mb-1">{{ category.title }}</h6>
+                            {% if category.parent %}
+                            <div class="small tg-text-muted">
+                                <i class="bi bi-arrow-up"></i> {{ category.parent.title }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="text-end">
+                            <div class="small tg-text-muted">
+                                {{ category.created_at|date:"d.m.y" }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if category.description %}
+                    <div class="small tg-text-muted tg-mb-2">{{ category.description }}</div>
+                    {% endif %}
+                    
+                    <!-- Дочерние категории -->
+                    {% if category.get_children %}
+                    <div class="small tg-mb-2">
+                        <span class="badge bg-info">
+                            <i class="bi bi-list-nested"></i> {{ category.get_children.count }} подкатегорий
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row g-1 tg-mt-2">
+                        <div class="col-6">
+                            <a href="{% url 'telegram_bot:category_edit' category.uuid %}" class="btn btn-sm btn-outline-primary w-100">
+                                <i class="bi bi-pencil"></i> Изменить
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="deleteCategory('{{ category.uuid }}', '{{ category.title }}')">
+                                <i class="bi bi-trash"></i> Удалить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <div class="tg-card">
+        <h6 class="tg-mb-2">Статистика категорий</h6>
+        <div class="row text-center">
+            <div class="col-4">
+                <div class="fw-bold">{{ categories|length }}</div>
+                <div class="small tg-text-muted">Всего категорий</div>
+            </div>
+            <div class="col-4">
+                <div class="fw-bold">
+                    {% for category in categories %}{% if not category.parent %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}
+                </div>
+                <div class="small tg-text-muted">Корневых</div>
+            </div>
+            <div class="col-4">
+                <div class="fw-bold">
+                    {% for category in categories %}{% if category.parent %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}
+                </div>
+                <div class="small tg-text-muted">Подкатегорий</div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Пустое состояние -->
+    <div class="tg-card tg-text-center">
+        <i class="bi bi-tags" style="font-size: 48px; color: var(--tg-theme-hint-color);"></i>
+        <h5 class="tg-mt-2">Нет категорий</h5>
+        <p class="tg-text-muted">Создайте первую категорию для организации транзакций.</p>
+        <a href="{% url 'telegram_bot:category_create' %}" class="btn tg-button">
+            <i class="bi bi-plus"></i> Создать категорию
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Форма удаления -->
+<form id="deleteForm" method="post" style="display: none;">
+    {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteCategory(categoryId, categoryTitle) {
+    if (confirm(`Вы уверены, что хотите удалить категорию "${categoryTitle}"?\n\nВнимание: нельзя удалить категорию с транзакциями или подкатегориями.`)) {
+        const form = document.getElementById('deleteForm');
+        form.action = '{% url "telegram_bot:category_delete" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', categoryId);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

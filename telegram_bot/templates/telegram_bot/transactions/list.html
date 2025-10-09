@@ -1,0 +1,187 @@
+{% extends 'telegram_bot/base.html' %}
+
+{% block title %}Транзакции - Домашняя бухгалтерия{% endblock %}
+{% block header %}Транзакции{% endblock %}
+
+{% block content %}
+<div class="tg-fade-in">
+    <!-- Фильтры -->
+    <div class="tg-card">
+        <h6 class="tg-mb-2">Фильтры</h6>
+        <form method="get" class="row g-2">
+            <div class="col-6 col-md-3">
+                <select name="type" class="form-select tg-form-control">
+                    <option value="">Все типы</option>
+                    <option value="IN" {% if filters.type == 'IN' %}selected{% endif %}>Доходы</option>
+                    <option value="EX" {% if filters.type == 'EX' %}selected{% endif %}>Расходы</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-3">
+                <select name="wallet" class="form-select tg-form-control">
+                    <option value="">Все кошельки</option>
+                    {% for wallet in wallets %}
+                    <option value="{{ wallet.uuid }}" {% if filters.wallet == wallet.uuid|stringformat:"s" %}selected{% endif %}>
+                        {{ wallet.title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-3">
+                <select name="category" class="form-select tg-form-control">
+                    <option value="">Все категории</option>
+                    {% for category in categories %}
+                    <option value="{{ category.uuid }}" {% if filters.category == category.uuid|stringformat:"s" %}selected{% endif %}>
+                        {{ category.title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-3">
+                <button type="submit" class="btn tg-button w-100">Применить</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Кнопка добавления -->
+    <div class="tg-card">
+        <div class="row g-2">
+            <div class="col-6">
+                <a href="{% url 'telegram_bot:transaction_create' %}?type=IN" class="btn tg-button-success w-100">
+                    <i class="bi bi-plus-circle"></i> Доход
+                </a>
+            </div>
+            <div class="col-6">
+                <a href="{% url 'telegram_bot:transaction_create' %}?type=EX" class="btn tg-button-danger w-100">
+                    <i class="bi bi-dash-circle"></i> Расход
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Список транзакций -->
+    {% if page_obj %}
+    <div class="tg-card">
+        <div class="table-responsive">
+            <table class="tg-table">
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Тип</th>
+                        <th>Описание</th>
+                        <th>Сумма</th>
+                        <th>Кошелек</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in page_obj %}
+                    <tr>
+                        <td class="small">{{ transaction.date|date:"d.m.y" }}</td>
+                        <td>
+                            <span class="badge {% if transaction.t_type == 'IN' %}bg-success{% else %}bg-danger{% endif %}">
+                                {% if transaction.t_type == 'IN' %}Доход{% else %}Расход{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ transaction.description|truncatechars:30 }}</div>
+                            {% if transaction.category %}
+                            <div class="tg-text-muted small">{{ transaction.category.title }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="{% if transaction.t_type == 'IN' %}tg-text-success{% else %}tg-text-danger{% endif %} fw-bold">
+                            {% if transaction.t_type == 'IN' %}+{% else %}-{% endif %}{{ transaction.amount|floatformat:0 }} ₽
+                        </td>
+                        <td class="small">{{ transaction.wallet.title }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'telegram_bot:transaction_edit' transaction.uuid %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteTransaction('{{ transaction.uuid }}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Пагинация -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Навигация по страницам" class="tg-mt-2">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Предыдущая</a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Следующая</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+    {% else %}
+    <!-- Пустое состояние -->
+    <div class="tg-card tg-text-center">
+        <i class="bi bi-list-ul" style="font-size: 48px; color: var(--tg-theme-hint-color);"></i>
+        <h5 class="tg-mt-2">Нет транзакций</h5>
+        <p class="tg-text-muted">Начните с добавления первой транзакции.</p>
+        <div class="row g-2">
+            <div class="col-6">
+                <a href="{% url 'telegram_bot:transaction_create' %}?type=IN" class="btn tg-button-success w-100">
+                    <i class="bi bi-plus-circle"></i> Доход
+                </a>
+            </div>
+            <div class="col-6">
+                <a href="{% url 'telegram_bot:transaction_create' %}?type=EX" class="btn tg-button-danger w-100">
+                    <i class="bi bi-dash-circle"></i> Расход
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Форма удаления -->
+<form id="deleteForm" method="post" style="display: none;">
+    {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteTransaction(transactionId) {
+    if (confirm('Вы уверены, что хотите удалить эту транзакцию?')) {
+        const form = document.getElementById('deleteForm');
+        form.action = '{% url "telegram_bot:transaction_delete" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', transactionId);
+        form.submit();
+    }
+}
+
+// Автоматическое применение фильтров при изменении
+document.querySelectorAll('select[name="type"], select[name="wallet"], select[name="category"]').forEach(function(select) {
+    select.addEventListener('change', function() {
+        this.form.submit();
+    });
+});
+</script>
+{% endblock %}

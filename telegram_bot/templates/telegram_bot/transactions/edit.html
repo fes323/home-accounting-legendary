@@ -1,0 +1,177 @@
+{% extends 'telegram_bot/base.html' %}
+
+{% block title %}Редактировать транзакцию - Домашняя бухгалтерия{% endblock %}
+{% block header %}Редактировать транзакцию{% endblock %}
+{% block show_back_button %}tg.BackButton.show();{% endblock %}
+
+{% block content %}
+<div class="tg-fade-in">
+    <div class="tg-card">
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Тип транзакции -->
+            <div class="tg-form-group">
+                <label class="tg-form-label">Тип транзакции</label>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <input type="radio" class="btn-check" name="t_type" id="income" value="IN" 
+                               {% if transaction.t_type == 'IN' %}checked{% endif %}>
+                        <label class="btn tg-button-success w-100" for="income">
+                            <i class="bi bi-plus-circle"></i> Доход
+                        </label>
+                    </div>
+                    <div class="col-6">
+                        <input type="radio" class="btn-check" name="t_type" id="expense" value="EX"
+                               {% if transaction.t_type == 'EX' %}checked{% endif %}>
+                        <label class="btn tg-button-danger w-100" for="expense">
+                            <i class="bi bi-dash-circle"></i> Расход
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Сумма -->
+            <div class="tg-form-group">
+                <label for="amount" class="tg-form-label">Сумма *</label>
+                <input type="number" class="tg-form-control" id="amount" name="amount" 
+                       step="0.01" min="0" required value="{{ transaction.amount }}"
+                       placeholder="0.00">
+            </div>
+
+            <!-- Кошелек -->
+            <div class="tg-form-group">
+                <label for="wallet" class="tg-form-label">Кошелек *</label>
+                <select class="tg-form-control" id="wallet" name="wallet" required>
+                    <option value="">Выберите кошелек</option>
+                    {% for wallet in wallets %}
+                    <option value="{{ wallet.uuid }}" {% if wallet.uuid == transaction.wallet.uuid %}selected{% endif %}>
+                        {{ wallet.title }} ({{ wallet.balance|floatformat:2 }} ₽)
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Категория -->
+            <div class="tg-form-group">
+                <label for="category" class="tg-form-label">Категория</label>
+                <select class="tg-form-control" id="category" name="category">
+                    <option value="">Без категории</option>
+                    {% for category in categories %}
+                    <option value="{{ category.uuid }}" {% if category.uuid == transaction.category.uuid %}selected{% endif %}>
+                        {{ category.title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Дата -->
+            <div class="tg-form-group">
+                <label for="date" class="tg-form-label">Дата</label>
+                <input type="date" class="tg-form-control" id="date" name="date" 
+                       value="{{ transaction.date|date:'Y-m-d' }}">
+            </div>
+
+            <!-- Налог -->
+            <div class="tg-form-group">
+                <label for="tax" class="tg-form-label">Налог (%)</label>
+                <input type="number" class="tg-form-control" id="tax" name="tax" 
+                       step="0.01" min="0" max="100" value="{{ transaction.tax }}"
+                       placeholder="0.00">
+            </div>
+
+            <!-- Описание -->
+            <div class="tg-form-group">
+                <label for="description" class="tg-form-label">Описание</label>
+                <textarea class="tg-form-control" id="description" name="description" 
+                          rows="3" placeholder="Описание транзакции">{{ transaction.description }}</textarea>
+            </div>
+
+            <!-- Информация о транзакции -->
+            <div class="tg-card tg-mb-2" style="background-color: var(--tg-theme-secondary-bg-color);">
+                <div class="row small tg-text-muted">
+                    <div class="col-6">
+                        <strong>Создана:</strong><br>
+                        {{ transaction.created_at|date:"d.m.Y H:i" }}
+                    </div>
+                    <div class="col-6">
+                        <strong>Обновлена:</strong><br>
+                        {{ transaction.updated_at|date:"d.m.Y H:i" }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Кнопки -->
+            <div class="row g-2">
+                <div class="col-6">
+                    <button type="submit" class="btn tg-button w-100">
+                        <i class="bi bi-check"></i> Сохранить
+                    </button>
+                </div>
+                <div class="col-6">
+                    <a href="{% url 'telegram_bot:transactions' %}" class="btn tg-button-secondary w-100">
+                        <i class="bi bi-x"></i> Отмена
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Кнопка удаления -->
+    <div class="tg-card">
+        <h6 class="tg-text-danger tg-mb-2">Опасная зона</h6>
+        <p class="small tg-text-muted tg-mb-2">
+            Удаление транзакции нельзя отменить. Баланс кошелька будет пересчитан автоматически.
+        </p>
+        <button type="button" class="btn tg-button-danger w-100" onclick="deleteTransaction()">
+            <i class="bi bi-trash"></i> Удалить транзакцию
+        </button>
+    </div>
+</div>
+
+<!-- Форма удаления -->
+<form id="deleteForm" method="post" action="{% url 'telegram_bot:transaction_delete' transaction.uuid %}" style="display: none;">
+    {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Валидация формы
+document.querySelector('form').addEventListener('submit', function(e) {
+    const amount = parseFloat(document.getElementById('amount').value);
+    const wallet = document.getElementById('wallet').value;
+    
+    if (!amount || amount <= 0) {
+        e.preventDefault();
+        alert('Сумма должна быть больше 0');
+        return;
+    }
+    
+    if (!wallet) {
+        e.preventDefault();
+        alert('Выберите кошелек');
+        return;
+    }
+});
+
+// Форматирование суммы
+document.getElementById('amount').addEventListener('input', function() {
+    let value = this.value;
+    if (value && !isNaN(value)) {
+        // Ограничиваем до 2 знаков после запятой
+        const parts = value.split('.');
+        if (parts[1] && parts[1].length > 2) {
+            this.value = parts[0] + '.' + parts[1].substring(0, 2);
+        }
+    }
+});
+
+// Удаление транзакции
+function deleteTransaction() {
+    if (confirm('Вы уверены, что хотите удалить эту транзакцию? Это действие нельзя отменить.')) {
+        document.getElementById('deleteForm').submit();
+    }
+}
+</script>
+{% endblock %}

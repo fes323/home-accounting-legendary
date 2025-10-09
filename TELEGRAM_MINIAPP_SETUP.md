@@ -8,16 +8,16 @@
 backend/
 ├── accounting/          # Django app для учета
 ├── users/              # Django app для пользователей
-├── telegram_bot/       # Telegram Bot
+├── telegram_bot/       # Telegram Bot и Mini App
+│   ├── mini_app_views.py # Django views для Mini App
+│   └── templates/      # HTML шаблоны
+│       └── telegram_bot/
+│           ├── base.html        # Базовый шаблон
+│           ├── dashboard.html   # Главная страница
+│           ├── transactions/    # Шаблоны транзакций
+│           ├── wallets/         # Шаблоны кошельков
+│           └── categories/      # Шаблоны категорий
 └── core/               # Основные настройки Django
-
-frontend/               # React Mini App
-├── src/
-│   ├── components/     # React компоненты
-│   ├── pages/          # Страницы приложения
-│   ├── services/       # API сервисы
-│   └── contexts/       # React контексты
-└── public/
 ```
 
 ## Установка и настройка
@@ -44,32 +44,23 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-### 2. Frontend (React)
+### 2. Mini App (Django Templates)
 
-1. Перейдите в папку frontend:
+Mini App теперь встроен в Django и использует HTML шаблоны с Bootstrap для responsive дизайна.
+
+1. Убедитесь, что Django сервер запущен:
 ```bash
-cd frontend
+python manage.py runserver
 ```
 
-2. Установите зависимости:
-```bash
-npm install
+2. Mini App доступен по адресу:
+```
+http://localhost:8000/telegram/mini-app/
 ```
 
-3. Скопируйте файл конфигурации:
-```bash
-cp env.example .env
+3. Для работы в Telegram WebApp добавьте параметры:
 ```
-
-4. Настройте переменные окружения в `.env`:
-```
-REACT_APP_API_URL=http://localhost:8000/api
-REACT_APP_TELEGRAM_BOT_USERNAME=your_bot_username
-```
-
-5. Запустите приложение:
-```bash
-npm start
+http://localhost:8000/telegram/mini-app/?tgWebAppData=...
 ```
 
 ## Настройка Telegram Bot
@@ -94,10 +85,31 @@ npm start
 
 В файле `telegram_bot/handlers/webapp_handlers.py` замените:
 ```python
-web_app_url = "https://your-domain.com"  # Замените на ваш URL
+web_app_url = "https://your-domain.com/telegram/mini-app/"  # Замените на ваш URL
 ```
 
-## API Endpoints
+## Mini App Endpoints
+
+### Основные страницы
+- `GET /telegram/mini-app/` - Главная страница (дашборд)
+- `GET /telegram/mini-app/transactions/` - Список транзакций
+- `GET /telegram/mini-app/transactions/create/` - Создание транзакции
+- `GET /telegram/mini-app/transactions/{id}/edit/` - Редактирование транзакции
+- `POST /telegram/mini-app/transactions/{id}/delete/` - Удаление транзакции
+
+### Кошельки
+- `GET /telegram/mini-app/wallets/` - Список кошельков
+- `GET /telegram/mini-app/wallets/create/` - Создание кошелька
+- `GET /telegram/mini-app/wallets/{id}/edit/` - Редактирование кошелька
+- `POST /telegram/mini-app/wallets/{id}/delete/` - Удаление кошелька
+
+### Категории
+- `GET /telegram/mini-app/categories/` - Список категорий
+- `GET /telegram/mini-app/categories/create/` - Создание категории
+- `GET /telegram/mini-app/categories/{id}/edit/` - Редактирование категории
+- `POST /telegram/mini-app/categories/{id}/delete/` - Удаление категории
+
+## API Endpoints (для внешних приложений)
 
 ### Аутентификация
 - `POST /api/user/auth/telegram/` - Авторизация через Telegram
@@ -121,23 +133,20 @@ web_app_url = "https://your-domain.com"  # Замените на ваш URL
 
 ### 1. Подготовка к продакшену
 
-1. Соберите React приложение:
-```bash
-cd frontend
-npm run build
-```
-
-2. Настройте веб-сервер (nginx/apache) для обслуживания статических файлов
-
-3. Настройте Django для продакшена:
+1. Настройте Django для продакшена:
 ```bash
 python manage.py collectstatic
+python manage.py migrate
 ```
+
+2. Настройте веб-сервер (nginx/apache) для обслуживания Django приложения
+
+3. Убедитесь, что все статические файлы доступны
 
 ### 2. Настройка домена
 
 1. Получите SSL сертификат для вашего домена
-2. Настройте веб-сервер для обслуживания React приложения
+2. Настройте веб-сервер для обслуживания Django приложения
 3. Обновите URL в Telegram Bot
 
 ### 3. Настройка переменных окружения
@@ -153,29 +162,40 @@ ALLOWED_HOSTS=your-domain.com
 
 ## Функционал Mini App
 
-### 1. Просмотр транзакций
-- История всех транзакций
-- Фильтрация по типу (доход/расход)
-- Фильтрация по дате
-- Статистика по доходам и расходам
+### 1. Главная страница (Дашборд)
+- Статистика доходов и расходов за месяц
+- Последние транзакции
+- Быстрые действия (добавить доход/расход)
+- Обзор кошельков
+- Адаптивный дизайн для мобильных устройств
 
 ### 2. Управление транзакциями
+- Просмотр истории всех транзакций
+- Фильтрация по типу, кошельку, категории, дате
 - Добавление новых транзакций
 - Редактирование существующих
 - Удаление транзакций
-- Выбор категории и кошелька
+- Пагинация для больших списков
 
-### 3. Управление категориями
-- Дерево категорий
+### 3. Управление кошельками
+- Просмотр всех кошельков
+- Создание новых кошельков
+- Редактирование кошельков
+- Удаление кошельков (с проверкой транзакций)
+- Статистика по кошелькам
+
+### 4. Управление категориями
+- Просмотр всех категорий
 - Создание новых категорий
 - Редактирование категорий
-- Удаление категорий
-- Подкатегории
+- Удаление категорий (с проверкой транзакций и подкатегорий)
+- Иерархическая структура категорий
 
-### 4. Авторизация
+### 5. Авторизация и безопасность
 - Автоматическая авторизация через Telegram
-- Безопасная передача данных
-- Сохранение сессии
+- Проверка подписи Telegram WebApp
+- Изоляция данных по пользователям
+- Responsive дизайн для всех устройств
 
 ## Безопасность
 
@@ -191,19 +211,30 @@ ALLOWED_HOSTS=your-domain.com
 tail -f logs/dev.log
 ```
 
-### 2. Логи React
-Откройте Developer Tools в браузере
+### 2. Отладка Mini App
+Откройте Developer Tools в браузере для проверки JavaScript
 
-### 3. Проверка API
+### 3. Проверка Mini App
 ```bash
+# Проверка доступности главной страницы
+curl -X GET http://localhost:8000/telegram/mini-app/
+
+# Проверка API (для внешних приложений)
 curl -X GET http://localhost:8000/api/transactions/ \
   -H "Authorization: Bearer your-token"
+```
+
+### 4. Проверка шаблонов
+```bash
+python manage.py check --deploy
 ```
 
 ## Поддержка
 
 При возникновении проблем:
-1. Проверьте логи
+1. Проверьте логи Django
 2. Убедитесь в правильности настроек
-3. Проверьте доступность API
+3. Проверьте доступность Mini App
 4. Проверьте настройки Telegram Bot
+5. Убедитесь, что все шаблоны загружаются корректно
+6. Проверьте работу JavaScript в браузере
