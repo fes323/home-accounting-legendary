@@ -1,10 +1,6 @@
 from decimal import Decimal
 from typing import List, Optional
 
-from accounting.models.transaction import Transaction
-from accounting.models.transactionCategory import TransactionCategoryTree
-from accounting.models.wallet import Wallet
-
 
 def format_balance(amount: Decimal) -> str:
     """Форматирование суммы для отображения"""
@@ -16,8 +12,10 @@ def format_balance(amount: Decimal) -> str:
     return formatted.replace(',', ' ').replace('.', ',')
 
 
-def format_transaction(transaction: Transaction) -> str:
+def format_transaction(transaction) -> str:
     """Форматирование транзакции для отображения"""
+    from accounting.models.transaction import Transaction
+
     emoji = "💰" if transaction.t_type == "IN" else "💸"
     type_text = "Доход" if transaction.t_type == "IN" else "Расход"
 
@@ -39,8 +37,10 @@ def format_transaction(transaction: Transaction) -> str:
     return text
 
 
-def format_wallet_info(wallet: Wallet) -> str:
+def format_wallet_info(wallet) -> str:
     """Форматирование информации о кошельке"""
+    from accounting.models.wallet import Wallet
+
     text = f"💳 <b>{wallet.title}</b>\n"
     text += f"Баланс: {format_balance(wallet.balance)} {wallet.currency.char_code}\n"
 
@@ -53,8 +53,10 @@ def format_wallet_info(wallet: Wallet) -> str:
     return text
 
 
-def format_category_tree(categories: List[TransactionCategoryTree]) -> str:
+def format_category_tree(categories: List) -> str:
     """Форматирование дерева категорий"""
+    from accounting.models.transactionCategory import TransactionCategoryTree
+
     if not categories:
         return "📂 Категории не найдены"
 
@@ -76,6 +78,8 @@ def format_statistics(user, period_days: int = 30) -> str:
 
     from django.db import models
     from django.utils import timezone
+
+    from accounting.models.transaction import Transaction
 
     end_date = timezone.now().date()
     start_date = end_date - timedelta(days=period_days)

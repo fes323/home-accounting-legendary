@@ -7,7 +7,7 @@ from users.models.user import User
 
 
 class UserAdmin(BaseUserAdmin):
-    list_display = ('username', 'email', 'first_name',
+    list_display = ('username', 'telegram_id', 'email', 'first_name',
                     'last_name', 'is_staff', 'total_balance')
     search_fields = ('username', 'email', 'first_name', 'last_name')
 
@@ -16,7 +16,7 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
         (_('Personal info'), {'fields': ('first_name',
-         'last_name', 'email', 'total_balance')}),
+         'last_name', 'telegram_id', 'email', 'total_balance')}),
         (_('Permissions'), {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
         }),

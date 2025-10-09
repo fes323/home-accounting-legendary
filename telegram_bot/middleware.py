@@ -3,8 +3,9 @@ from typing import Any, Awaitable, Callable, Dict
 
 from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, Message
+from asgiref.sync import sync_to_async
 from django.contrib.auth import get_user_model
-from django.db import connection
+from django.db import close_old_connections, connection
 
 User = get_user_model()
 
@@ -18,16 +19,14 @@ class DatabaseMiddleware(BaseMiddleware):
         event: Message | CallbackQuery,
         data: Dict[str, Any]
     ) -> Any:
-        # Убеждаемся, что соединение с БД активно
-        if connection.connection is None:
-            connection.connect()
+        # Закрываем старые соединения перед обработкой
+        await sync_to_async(close_old_connections)()
 
         try:
             return await handler(event, data)
         finally:
-            # Закрываем соединение после обработки
-            if connection.connection is not None:
-                connection.close()
+            # Закрываем соединения после обработки
+            await sync_to_async(close_old_connections)()
 
 
 class AuthMiddleware(BaseMiddleware):
@@ -60,14 +59,15 @@ class AuthMiddleware(BaseMiddleware):
             # Пытаемся найти пользователя по telegram_id
             django_user = await asyncio.to_thread(
                 User.objects.get,
-                username=f"tg_{telegram_user.id}"
+                telegram_id=telegram_user.id
             )
             return django_user, False
         except User.DoesNotExist:
             # Создаем нового пользователя
             django_user = await asyncio.to_thread(
                 User.objects.create_user,
-                username=f"tg_{telegram_user.id}",
+                telegram_id=telegram_user.id,
+                username=telegram_user.username or telegram_user.id,
                 first_name=telegram_user.first_name or "",
                 last_name=telegram_user.last_name or "",
                 email=f"{telegram_user.id}@telegram.local"

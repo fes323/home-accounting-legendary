@@ -1,6 +1,6 @@
 # Created by https://www.gitignore.io
 .venv
-
+venv/
 */migrations/*0*
 */.vscode/
 .vscode

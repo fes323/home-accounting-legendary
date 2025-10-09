@@ -31,8 +31,8 @@ TELEGRAM_BOT_TOKEN=1234567890:ABCdefGHIjklMNOpqrsTUVwxyz
 # URL вашего сервера (для webhook)
 TELEGRAM_WEBHOOK_URL=https://yourdomain.com
 
-# Секретный токен (уже сгенерирован)
-TELEGRAM_WEBHOOK_SECRET=a7f9e2b8c4d1e6f3g9h2i5j8k1l4m7n0o3p6q9r2s5t8u1v4w7x0y3z6
+# Секретный токен
+TELEGRAM_WEBHOOK_SECRET=a7f4gdb8c4d1e6f3g9h2i5j8k1l4m7n0o3p6q9r2s5t8f3w4w7x0y3z6
 
 # Username бота (без @)
 BOT_USERNAME=your_finance_bot

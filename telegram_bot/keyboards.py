@@ -1,5 +1,5 @@
 from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup,
-                           KeyboardButton, ReplyKeyboardMarkup)
+                           KeyboardButton, ReplyKeyboardMarkup, WebAppInfo)
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 
@@ -13,16 +13,29 @@ def main_menu_keyboard():
     builder.add(KeyboardButton(text="💳 Кошельки"))
     builder.add(KeyboardButton(text="📂 Категории"))
     builder.add(KeyboardButton(text="📊 Статистика"))
+    builder.add(KeyboardButton(text="📱 Веб-приложение"))
     builder.add(KeyboardButton(text="⚙️ Настройки"))
     builder.add(KeyboardButton(text="❓ Помощь"))
 
-    builder.adjust(2, 2, 2, 2)
+    builder.adjust(1, 2, 2, 2, 1, 1)
 
     return builder.as_markup(
         resize_keyboard=True,
         one_time_keyboard=False,
         input_field_placeholder="Выберите действие..."
     )
+
+
+def web_app_keyboard(web_app_url):
+    """Клавиатура с кнопкой для открытия WebApp"""
+    builder = InlineKeyboardBuilder()
+
+    builder.add(InlineKeyboardButton(
+        text="📱 Открыть приложение",
+        web_app=WebAppInfo(url=web_app_url)
+    ))
+
+    return builder.as_markup()
 
 
 def wallets_keyboard():
@@ -81,6 +94,24 @@ def transaction_type_keyboard():
     return builder.as_markup()
 
 
+def skip_keyboard():
+    """Клавиатура с кнопкой пропустить"""
+    builder = InlineKeyboardBuilder()
+
+    builder.add(InlineKeyboardButton(
+        text="⏭️ Пропустить",
+        callback_data="skip_field"
+    ))
+    builder.add(InlineKeyboardButton(
+        text="❌ Отмена",
+        callback_data="cancel_transaction"
+    ))
+
+    builder.adjust(1)
+
+    return builder.as_markup()
+
+
 def wallet_selection_keyboard(wallets):
     """Клавиатура для выбора кошелька"""
     builder = InlineKeyboardBuilder()
@@ -101,24 +132,56 @@ def wallet_selection_keyboard(wallets):
     return builder.as_markup()
 
 
-def category_selection_keyboard(categories):
+def category_selection_keyboard(categories, for_parent=False):
     """Клавиатура для выбора категории"""
+    builder = InlineKeyboardBuilder()
+
+    for category in categories:
+        indent = "  " * category.level
+        callback_data = f"select_category_parent_{category.uuid}" if for_parent else f"select_category_{category.uuid}"
+        builder.add(InlineKeyboardButton(
+            text=f"{indent}{category.title}",
+            callback_data=callback_data
+        ))
+
+    if not for_parent:
+        builder.add(InlineKeyboardButton(
+            text="➕ Создать новую категорию",
+            callback_data="create_new_category"
+        ))
+        builder.add(InlineKeyboardButton(
+            text="❌ Без категории",
+            callback_data="no_category"
+        ))
+
+    builder.add(InlineKeyboardButton(
+        text="❌ Отмена",
+        callback_data="cancel_transaction"
+    ))
+
+    builder.adjust(1)
+
+    return builder.as_markup()
+
+
+def category_parent_selection_keyboard(categories):
+    """Клавиатура для выбора родительской категории"""
     builder = InlineKeyboardBuilder()
 
     for category in categories:
         indent = "  " * category.level
         builder.add(InlineKeyboardButton(
             text=f"{indent}{category.title}",
-            callback_data=f"select_category_{category.uuid}"
+            callback_data=f"select_category_parent_{category.uuid}"
         ))
 
     builder.add(InlineKeyboardButton(
-        text="❌ Без категории",
-        callback_data="no_category"
+        text="⏭️ Создать корневую категорию",
+        callback_data="create_root_category"
     ))
     builder.add(InlineKeyboardButton(
         text="❌ Отмена",
-        callback_data="cancel_transaction"
+        callback_data="cancel_category"
     ))
 
     builder.adjust(1)
@@ -180,5 +243,120 @@ def back_keyboard():
         text="⬅️ Назад",
         callback_data="back"
     ))
+
+    return builder.as_markup()
+
+
+def paginated_categories_keyboard(categories, page=0, items_per_page=10):
+    """Клавиатура для категорий с пагинацией"""
+    builder = InlineKeyboardBuilder()
+
+    # Вычисляем индексы для текущей страницы
+    start_idx = page * items_per_page
+    end_idx = start_idx + items_per_page
+    page_categories = categories[start_idx:end_idx]
+
+    # Добавляем кнопки категорий
+    for category in page_categories:
+        indent = "  " * category.level
+        builder.add(InlineKeyboardButton(
+            text=f"{indent}{category.title}",
+            callback_data=f"select_category_parent_{category.uuid}"
+        ))
+
+    # Добавляем кнопки навигации если нужно
+    total_pages = (len(categories) + items_per_page - 1) // items_per_page
+    if total_pages > 1:
+        nav_row = []
+
+        # Кнопка "Назад"
+        if page > 0:
+            nav_row.append(InlineKeyboardButton(
+                text="⬅️ Назад",
+                callback_data=f"categories_page_{page - 1}"
+            ))
+
+        # Кнопка "Далее"
+        if page < total_pages - 1:
+            nav_row.append(InlineKeyboardButton(
+                text="Далее ➡️",
+                callback_data=f"categories_page_{page + 1}"
+            ))
+
+        if nav_row:
+            builder.row(*nav_row)
+
+    # Добавляем стандартные кнопки
+    builder.add(InlineKeyboardButton(
+        text="⏭️ Создать корневую категорию",
+        callback_data="create_root_category"
+    ))
+    builder.add(InlineKeyboardButton(
+        text="❌ Отмена",
+        callback_data="cancel_category"
+    ))
+
+    builder.adjust(1)
+
+    return builder.as_markup()
+
+
+def paginated_category_selection_keyboard(categories, page=0, items_per_page=10, for_parent=False):
+    """Клавиатура для выбора категории с пагинацией"""
+    builder = InlineKeyboardBuilder()
+
+    # Вычисляем индексы для текущей страницы
+    start_idx = page * items_per_page
+    end_idx = start_idx + items_per_page
+    page_categories = categories[start_idx:end_idx]
+
+    # Добавляем кнопки категорий
+    for category in page_categories:
+        indent = "  " * category.level
+        callback_data = f"select_category_parent_{category.uuid}" if for_parent else f"select_category_{category.uuid}"
+        builder.add(InlineKeyboardButton(
+            text=f"{indent}{category.title}",
+            callback_data=callback_data
+        ))
+
+    # Добавляем кнопки навигации если нужно
+    total_pages = (len(categories) + items_per_page - 1) // items_per_page
+    if total_pages > 1:
+        nav_row = []
+
+        # Кнопка "Назад"
+        if page > 0:
+            nav_row.append(InlineKeyboardButton(
+                text="⬅️ Назад",
+                callback_data=f"category_select_page_{page - 1}"
+            ))
+
+        # Кнопка "Далее"
+        if page < total_pages - 1:
+            nav_row.append(InlineKeyboardButton(
+                text="Далее ➡️",
+                callback_data=f"category_select_page_{page + 1}"
+            ))
+
+        if nav_row:
+            builder.row(*nav_row)
+
+    # Добавляем дополнительные кнопки
+    if not for_parent:
+        builder.add(InlineKeyboardButton(
+            text="➕ Создать новую категорию",
+            callback_data="create_new_category"
+        ))
+        builder.add(InlineKeyboardButton(
+            text="❌ Без категории",
+            callback_data="no_category"
+        ))
+
+    builder.add(InlineKeyboardButton(
+        text="❌ Отмена",
+        callback_data="cancel_transaction"
+    ))
+
+    builder.adjust(1)
 
     return builder.as_markup()

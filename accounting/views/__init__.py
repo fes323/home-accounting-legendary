@@ -1,0 +1,1 @@
+# Views для accounting app

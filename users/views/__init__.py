@@ -1,1 +1,1 @@
-from .user import UserViewSet
+# Views для users app

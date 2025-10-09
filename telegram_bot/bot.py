@@ -1,6 +1,8 @@
 import asyncio
 import logging
+import os
 
+import django
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -13,6 +15,11 @@ from telegram_bot.config import (BOT_COMMANDS, TELEGRAM_BOT_TOKEN,
                                  WEBHOOK_URL)
 from telegram_bot.handlers import register_handlers
 from telegram_bot.middleware import AuthMiddleware, DatabaseMiddleware
+
+# Настройка Django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.dev')
+django.setup()
+
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
