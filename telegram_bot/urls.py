@@ -15,6 +15,7 @@ from telegram_bot.test_auth_view import TestAuthView
 from telegram_bot.views import TelegramWebhookView, telegram_webhook
 from telegram_bot.webapp_auth_view import (TelegramWebAppAuthView,
                                            TelegramWebAppTestView)
+from telegram_bot.webapp_integration_view import WebAppIntegrationView
 
 app_name = 'telegram_bot'
 
@@ -26,6 +27,8 @@ urlpatterns = [
     # WebApp API endpoints
     path('webapp-auth/', TelegramWebAppAuthView.as_view(), name='webapp_auth'),
     path('webapp-test/', TelegramWebAppTestView.as_view(), name='webapp_test'),
+    path('webapp-integration/', WebAppIntegrationView.as_view(),
+         name='webapp_integration'),
 
     # Mini App endpoints
     path('mini-app/', MiniAppDashboardView.as_view(), name='mini_app_dashboard'),

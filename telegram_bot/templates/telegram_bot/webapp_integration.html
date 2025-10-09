@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram WebApp Integration</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .json {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.success { background-color: #28a745; color: white; }
+        .status.error { background-color: #dc3545; color: white; }
+        .status.warning { background-color: #ffc107; color: black; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Telegram WebApp Integration Test</h1>
+    
+    <div class="container">
+        <h3>📱 Telegram WebApp Status</h3>
+        <div id="telegram-status">
+            <p><strong>WebApp Ready:</strong> <span id="webapp-ready" class="status error">Loading...</span></p>
+            <p><strong>Platform:</strong> <span id="platform">Unknown</span></p>
+            <p><strong>Version:</strong> <span id="version">Unknown</span></p>
+            <p><strong>Color Scheme:</strong> <span id="color-scheme">Unknown</span></p>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h3>🔑 Telegram WebApp Data</h3>
+        <div id="telegram-data">
+            <p><strong>Init Data Available:</strong> <span id="init-data-status" class="status error">Checking...</span></p>
+            <p><strong>Init Data Length:</strong> <span id="init-data-length">0</span> characters</p>
+            <div id="init-data-content" class="json" style="display: none;"></div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h3>🧪 Test Actions</h3>
+        <button onclick="testAuth()" id="test-auth-btn">Test Authentication</button>
+        <button onclick="sendToServer()" id="send-server-btn">Send to Server</button>
+        <button onclick="redirectToApp()" id="redirect-btn">Redirect to Main App</button>
+        <div id="test-results"></div>
+    </div>
+    
+    <div class="container">
+        <h3>📊 Server Response</h3>
+        <div id="server-response" class="json">No requests yet...</div>
+    </div>
+    
+    <div class="container">
+        <h3>🔍 Debug Information</h3>
+        <div id="debug-info" class="json">Loading debug info...</div>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        let tg = window.Telegram.WebApp;
+        let initData = '';
+        let initDataUnsafe = {};
+        
+        // Инициализируем WebApp
+        tg.ready();
+        
+        // Получаем данные
+        initData = tg.initData || '';
+        initDataUnsafe = tg.initDataUnsafe || {};
+        
+        // Обновляем статус
+        document.getElementById('webapp-ready').textContent = 'Ready';
+        document.getElementById('webapp-ready').className = 'status success';
+        document.getElementById('platform').textContent = tg.platform || 'Unknown';
+        document.getElementById('version').textContent = tg.version || 'Unknown';
+        document.getElementById('color-scheme').textContent = tg.colorScheme || 'Unknown';
+        
+        // Обновляем информацию о данных
+        if (initData) {
+            document.getElementById('init-data-status').textContent = 'Available';
+            document.getElementById('init-data-status').className = 'status success';
+            document.getElementById('init-data-length').textContent = initData.length;
+            document.getElementById('init-data-content').textContent = initData;
+            document.getElementById('init-data-content').style.display = 'block';
+        } else {
+            document.getElementById('init-data-status').textContent = 'Not Available';
+            document.getElementById('init-data-status').className = 'status error';
+        }
+        
+        // Обновляем debug информацию
+        document.getElementById('debug-info').textContent = JSON.stringify({
+            initData: initData,
+            initDataUnsafe: initDataUnsafe,
+            platform: tg.platform,
+            version: tg.version,
+            colorScheme: tg.colorScheme,
+            themeParams: tg.themeParams,
+            isExpanded: tg.isExpanded,
+            viewportHeight: tg.viewportHeight,
+            viewportStableHeight: tg.viewportStableHeight
+        }, null, 2);
+        
+        // Функция тестирования авторизации
+        function testAuth() {
+            const btn = document.getElementById('test-auth-btn');
+            const results = document.getElementById('test-results');
+            
+            btn.disabled = true;
+            btn.textContent = 'Testing...';
+            results.innerHTML = '<div class="info">Testing authentication...</div>';
+            
+            if (!initData) {
+                results.innerHTML = '<div class="error">No init data available</div>';
+                btn.disabled = false;
+                btn.textContent = 'Test Authentication';
+                return;
+            }
+            
+            // Отправляем данные на сервер
+            fetch('/telegram/webapp-auth/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: '_auth=' + encodeURIComponent(initData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('server-response').textContent = JSON.stringify(data, null, 2);
+                
+                if (data.ok) {
+                    results.innerHTML = '<div class="success">Authentication successful! User: ' + data.user.username + '</div>';
+                } else {
+                    results.innerHTML = '<div class="error">Authentication failed: ' + (data.error || 'Unknown error') + '</div>';
+                }
+            })
+            .catch(error => {
+                document.getElementById('server-response').textContent = 'Error: ' + error.message;
+                results.innerHTML = '<div class="error">Request failed: ' + error.message + '</div>';
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.textContent = 'Test Authentication';
+            });
+        }
+        
+        // Функция отправки данных на сервер
+        function sendToServer() {
+            const btn = document.getElementById('send-server-btn');
+            const results = document.getElementById('test-results');
+            
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+            results.innerHTML = '<div class="info">Sending data to server...</div>';
+            
+            if (!initData) {
+                results.innerHTML = '<div class="error">No init data available</div>';
+                btn.disabled = false;
+                btn.textContent = 'Send to Server';
+                return;
+            }
+            
+            // Отправляем данные на тестовый endpoint
+            fetch('/telegram/webapp-test/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: '_auth=' + encodeURIComponent(initData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('server-response').textContent = JSON.stringify(data, null, 2);
+                results.innerHTML = '<div class="success">Data sent successfully!</div>';
+            })
+            .catch(error => {
+                document.getElementById('server-response').textContent = 'Error: ' + error.message;
+                results.innerHTML = '<div class="error">Request failed: ' + error.message + '</div>';
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.textContent = 'Send to Server';
+            });
+        }
+        
+        // Функция перенаправления на основное приложение
+        function redirectToApp() {
+            if (initData) {
+                // Перенаправляем на основное приложение с данными авторизации
+                window.location.href = '/telegram/mini-app/?_auth=' + encodeURIComponent(initData);
+            } else {
+                // Перенаправляем без данных (для тестирования)
+                window.location.href = '/telegram/mini-app/';
+            }
+        }
+        
+        // Автоматическое тестирование при загрузке
+        window.addEventListener('load', function() {
+            if (initData) {
+                console.log('Telegram WebApp data available:', initData);
+                console.log('Unsafe data:', initDataUnsafe);
+            } else {
+                console.log('No Telegram WebApp data available');
+            }
+        });
+    </script>
+</body>
+</html>

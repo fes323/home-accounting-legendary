@@ -23,7 +23,8 @@ class WebAppHandler:
         @self.router.message(Command("app"))
         async def open_web_app(message: Message):
             """Открытие WebApp."""
-            web_app_url = settings.TELEGRAM_MINIAPP_URL
+            # Используем страницу интеграции для тестирования
+            web_app_url = f"{settings.TELEGRAM_WEBHOOK_URL}/telegram/webapp-integration/"
 
             await message.answer(
                 "📱 <b>Откройте веб-приложение</b>\n\n"
@@ -34,7 +35,8 @@ class WebAppHandler:
         @self.router.message(F.text == "📱 Веб-приложение")
         async def web_app_button(message: Message):
             """Обработка кнопки веб-приложения."""
-            web_app_url = settings.TELEGRAM_MINIAPP_URL
+            # Используем страницу интеграции для тестирования
+            web_app_url = f"{settings.TELEGRAM_WEBHOOK_URL}/telegram/webapp-integration/"
 
             await message.answer(
                 "📱 <b>Откройте веб-приложение</b>\n\n"
