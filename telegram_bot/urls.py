@@ -12,6 +12,7 @@ from telegram_bot.mini_app_views import (CategoryCreateView,
                                          TransactionListView, WalletCreateView,
                                          WalletDeleteView, WalletEditView,
                                          WalletListView)
+from telegram_bot.mobile_debug_view import MobileDebugView
 from telegram_bot.test_auth_view import TestAuthView
 from telegram_bot.views import TelegramWebhookView, telegram_webhook
 from telegram_bot.webapp_auth_view import (TelegramWebAppAuthView,
@@ -31,6 +32,7 @@ urlpatterns = [
     path('webapp-integration/', WebAppIntegrationView.as_view(),
          name='webapp_integration'),
     path('auto-auth/', AutoAuthView.as_view(), name='auto_auth'),
+    path('mobile-debug/', MobileDebugView.as_view(), name='mobile_debug'),
 
     # Mini App endpoints
     path('mini-app/', MiniAppDashboardView.as_view(), name='mini_app_dashboard'),
