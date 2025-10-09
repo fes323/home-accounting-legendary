@@ -8,7 +8,7 @@ from .models.wallet import Wallet
 class WalletSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wallet
-        fields = ['uuid', 'name', 'balance', 'currency', 'is_family_access']
+        fields = ['uuid', 'title', 'balance', 'currency', 'is_family_access']
 
 
 class TransactionCategorySerializer(serializers.ModelSerializer):
@@ -27,7 +27,7 @@ class TransactionCategorySerializer(serializers.ModelSerializer):
 class TransactionSerializer(serializers.ModelSerializer):
     category_title = serializers.CharField(
         source='category.title', read_only=True)
-    wallet_name = serializers.CharField(source='wallet.name', read_only=True)
+    wallet_name = serializers.CharField(source='wallet.title', read_only=True)
 
     class Meta:
         model = Transaction
