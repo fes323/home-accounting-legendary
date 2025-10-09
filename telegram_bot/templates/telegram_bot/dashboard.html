@@ -5,6 +5,22 @@
 
 {% block content %}
 <div class="tg-fade-in">
+    <!-- Информация о пользователе -->
+    <div class="tg-card">
+        <div class="d-flex align-items-center">
+            <div class="tg-user-avatar">
+                <i class="bi bi-person-circle" style="font-size: 48px; color: var(--tg-theme-button-color);"></i>
+            </div>
+            <div class="tg-user-info ms-3">
+                <h5 class="tg-mb-1">{{ user.first_name|default:user.username }}</h5>
+                {% if user.last_name %}
+                <p class="tg-text-muted tg-mb-0">{{ user.last_name }}</p>
+                {% endif %}
+                <small class="tg-text-muted">@{{ user.username }}</small>
+            </div>
+        </div>
+    </div>
+
     <!-- Статистика -->
     <div class="tg-stats">
         <div class="tg-stat-card">

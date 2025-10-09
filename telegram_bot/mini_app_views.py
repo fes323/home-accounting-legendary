@@ -43,8 +43,9 @@ class TelegramMiniAppView(View):
             request.user = test_user
             return super().dispatch(request, *args, **kwargs)
 
+
         # Проверяем, что запрос приходит из Telegram
-        if not self._is_telegram_request(request):
+п if not self._is_telegram_request(request):
             return JsonResponse({'error': 'Unauthorized'}, status=401)
 
         # Получаем пользователя из Telegram данных
@@ -147,7 +148,8 @@ class MiniAppDashboardView(TelegramMiniAppView):
             'balance': balance,
             'recent_transactions': recent_transactions_list,
             'wallets': wallets,
-            'transaction_count': recent_transactions.count()
+            'transaction_count': recent_transactions.count(),
+            'user': request.user
         }
 
         return render(request, 'telegram_bot/dashboard.html', context)
