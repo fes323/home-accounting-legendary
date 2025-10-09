@@ -11,6 +11,7 @@ from telegram_bot.mini_app_views import (CategoryCreateView,
                                          TransactionListView, WalletCreateView,
                                          WalletDeleteView, WalletEditView,
                                          WalletListView)
+from telegram_bot.test_auth_view import TestAuthView
 from telegram_bot.views import TelegramWebhookView, telegram_webhook
 
 app_name = 'telegram_bot'
@@ -24,6 +25,7 @@ urlpatterns = [
     path('mini-app/', MiniAppDashboardView.as_view(), name='mini_app_dashboard'),
     path('mini-app/diagnostic/', MiniAppDiagnosticView.as_view(),
          name='mini_app_diagnostic'),
+    path('mini-app/test-auth/', TestAuthView.as_view(), name='test_auth'),
 
     # Transaction endpoints
     path('mini-app/transactions/',

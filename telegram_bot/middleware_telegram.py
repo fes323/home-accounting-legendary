@@ -43,6 +43,11 @@ class TelegramWebAppMiddleware(CsrfViewMiddleware):
         if 'X-Telegram-Bot-Api-Secret-Token' in request.META:
             return True
 
+        # Проверяем Referer от Telegram
+        referer = request.META.get('HTTP_REFERER', '')
+        if 'web.telegram.org' in referer or 'webk.telegram.org' in referer or 'webz.telegram.org' in referer:
+            return True
+
         return False
 
 
@@ -82,6 +87,11 @@ class TelegramWebAppSecurityMiddleware:
         # Проверяем User-Agent Telegram WebApp
         user_agent = request.META.get('HTTP_USER_AGENT', '')
         if 'TelegramBot' in user_agent or 'Telegram' in user_agent:
+            return True
+
+        # Проверяем Referer от Telegram
+        referer = request.META.get('HTTP_REFERER', '')
+        if 'web.telegram.org' in referer or 'webk.telegram.org' in referer or 'webz.telegram.org' in referer:
             return True
 
         return False

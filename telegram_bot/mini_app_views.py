@@ -60,7 +60,24 @@ class TelegramMiniAppView(View):
         # Проверяем заголовки и параметры Telegram WebApp
         init_data = request.GET.get(
             'tgWebAppData') or request.POST.get('tgWebAppData')
-        return bool(init_data)
+        if init_data:
+            return True
+
+        # Проверяем User-Agent Telegram WebApp
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        if 'TelegramBot' in user_agent or 'Telegram' in user_agent:
+            return True
+
+        # Проверяем заголовки, которые отправляет Telegram
+        if 'X-Telegram-Bot-Api-Secret-Token' in request.META:
+            return True
+
+        # Проверяем Referer от Telegram
+        referer = request.META.get('HTTP_REFERER', '')
+        if 'web.telegram.org' in referer or 'webk.telegram.org' in referer or 'webz.telegram.org' in referer:
+            return True
+
+        return False
 
     def _get_telegram_user(self, request):
         """Получаем пользователя из Telegram данных"""
@@ -130,6 +147,18 @@ class MiniAppDiagnosticView(View):
             except Exception as e:
                 telegram_data_parsed = {'error': str(e)}
 
+        # Детальная диагностика Telegram запроса
+        telegram_detection_details = {
+            'has_tgWebAppData': bool(init_data),
+            'user_agent_contains_telegram': 'Telegram' in request.META.get('HTTP_USER_AGENT', ''),
+            'has_telegram_secret_token': 'X-Telegram-Bot-Api-Secret-Token' in request.META,
+            'referer_from_telegram': any(domain in request.META.get('HTTP_REFERER', '')
+                                         for domain in ['web.telegram.org', 'webk.telegram.org', 'webz.telegram.org']),
+            'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+            'referer': request.META.get('HTTP_REFERER', ''),
+            'all_headers': {k: v for k, v in request.META.items() if k.startswith('HTTP_')}
+        }
+
         # Собираем информацию о конфигурации
         config_info = {
             'DEBUG': settings.DEBUG,
@@ -139,8 +168,8 @@ class MiniAppDiagnosticView(View):
             'TELEGRAM_BOT_TOKEN': settings.TELEGRAM_BOT_TOKEN[:10] + '...' if settings.TELEGRAM_BOT_TOKEN else 'Not set',
             'request_host': request.get_host(),
             'request_method': request.method,
-            'user_agent': request.META.get('HTTP_USER_AGENT', ''),
             'is_telegram_request': self._is_telegram_request(request),
+            'telegram_detection_details': telegram_detection_details,
             'telegram_data_raw': init_data[:100] + '...' if init_data and len(init_data) > 100 else init_data,
             'telegram_data_parsed': telegram_data_parsed,
             'signature_valid': signature_valid,
