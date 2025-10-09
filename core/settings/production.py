@@ -46,10 +46,12 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # Кастомный CSRF middleware для Telegram
+    'telegram_bot.middleware_telegram.TelegramWebAppMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Безопасность для Telegram WebApp
+    'telegram_bot.middleware_telegram.TelegramWebAppSecurityMiddleware',
 ]
 
 REST_FRAMEWORK = {
@@ -182,7 +184,8 @@ TELEGRAM_BOT_COMMANDS = [
 # ===========================================
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = 'DENY'
+# Разрешаем встраивание в iframe для Telegram WebApp
+X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 # HTTPS настройки
 SECURE_SSL_REDIRECT = os.getenv(

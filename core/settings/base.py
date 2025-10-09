@@ -41,10 +41,12 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # Кастомный CSRF middleware для Telegram
+    'telegram_bot.middleware_telegram.TelegramWebAppMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Безопасность для Telegram WebApp
+    'telegram_bot.middleware_telegram.TelegramWebAppSecurityMiddleware',
 ]
 
 REST_FRAMEWORK = {
