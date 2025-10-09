@@ -81,12 +81,14 @@ http://localhost:8000/telegram/mini-app/?tgWebAppData=...
 
 2. Укажите URL вашего приложения (например, `https://your-domain.com`)
 
-### 3. Обновление URL в коде
+### 3. Настройка URL в переменных окружения
 
-В файле `telegram_bot/handlers/webapp_handlers.py` замените:
-```python
-web_app_url = "https://your-domain.com/telegram/mini-app/"  # Замените на ваш URL
+Добавьте в файл `.env`:
+```env
+TELEGRAM_MINIAPP_URL=https://your-domain.com/telegram/mini-app/
 ```
+
+URL автоматически будет использоваться в коде через настройки Django.
 
 ## Mini App Endpoints
 

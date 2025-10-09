@@ -130,6 +130,9 @@ TELEGRAM_WEBHOOK_SECRET = os.getenv('TELEGRAM_WEBHOOK_SECRET', '')
 BOT_USERNAME = os.getenv('BOT_USERNAME', '')
 BOT_DESCRIPTION = "Личный помощник для учета финансов"
 
+# Mini App settings
+TELEGRAM_MINIAPP_URL = os.getenv('TELEGRAM_MINIAPP_URL', '')
+
 # Webhook settings
 TELEGRAM_WEBHOOK_PATH = '/telegram/webhook/'
 TELEGRAM_WEBHOOK_FULL_URL = f"{TELEGRAM_WEBHOOK_URL}{TELEGRAM_WEBHOOK_PATH}" if TELEGRAM_WEBHOOK_URL else ''

@@ -5,6 +5,7 @@
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import Message
+from django.conf import settings
 
 from ..keyboards import web_app_keyboard
 
@@ -22,7 +23,7 @@ class WebAppHandler:
         @self.router.message(Command("app"))
         async def open_web_app(message: Message):
             """Открытие WebApp."""
-            web_app_url = "https://your-domain.com"  # Замените на ваш URL
+            web_app_url = settings.TELEGRAM_MINIAPP_URL
 
             await message.answer(
                 "📱 <b>Откройте веб-приложение</b>\n\n"
@@ -33,7 +34,7 @@ class WebAppHandler:
         @self.router.message(F.text == "📱 Веб-приложение")
         async def web_app_button(message: Message):
             """Обработка кнопки веб-приложения."""
-            web_app_url = "https://your-domain.com"  # Замените на ваш URL
+            web_app_url = settings.TELEGRAM_MINIAPP_URL
 
             await message.answer(
                 "📱 <b>Откройте веб-приложение</b>\n\n"

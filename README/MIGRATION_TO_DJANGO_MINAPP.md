@@ -95,10 +95,12 @@ location / {
 ```
 
 ### 4. Настройка Telegram Bot
-Обновите URL Mini App в боте:
-```python
-web_app_url = "https://your-domain.com/telegram/mini-app/"
+Добавьте URL Mini App в переменные окружения:
+```env
+TELEGRAM_MINIAPP_URL=https://your-domain.com/telegram/mini-app/
 ```
+
+URL автоматически будет использоваться в коде через настройки Django.
 
 ## Преимущества новой архитектуры
 

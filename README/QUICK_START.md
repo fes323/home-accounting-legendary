@@ -18,6 +18,7 @@ TELEGRAM_BOT_TOKEN=ваш_токен_от_BotFather
 TELEGRAM_WEBHOOK_URL=https://yourdomain.com
 TELEGRAM_WEBHOOK_SECRET=a7f9e2b8c4d1e6f3g9h2i5j8k1l4m7n0o3p6q9r2s5t8u1v4w7x0y3z6
 BOT_USERNAME=ваш_username_бота
+TELEGRAM_MINIAPP_URL=https://yourdomain.com/telegram/mini-app/
 ```
 
 **Примечание:** Проект использует `python-dotenv` для автоматической загрузки переменных окружения из `.env` файла.

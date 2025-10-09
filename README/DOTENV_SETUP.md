@@ -36,6 +36,9 @@ TELEGRAM_WEBHOOK_SECRET=a7f4gdb8c4d1e6f3g9h2i5j8k1l4m7n0o3p6q9r2s5t8f3w4w7x0y3z6
 
 # Username бота (без @)
 BOT_USERNAME=your_finance_bot
+
+# URL Telegram Mini App
+TELEGRAM_MINIAPP_URL=https://yourdomain.com/telegram/mini-app/
 ```
 
 ### 4. Запустите бота

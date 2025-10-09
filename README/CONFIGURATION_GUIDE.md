@@ -44,6 +44,7 @@ TELEGRAM_BOT_TOKEN=your_bot_token_here
 TELEGRAM_WEBHOOK_URL=https://yourdomain.com
 TELEGRAM_WEBHOOK_SECRET=your-webhook-secret-token
 BOT_USERNAME=your_bot_username
+TELEGRAM_MINIAPP_URL=https://yourdomain.com/telegram/mini-app/
 ```
 
 ### Security Settings (Production)
