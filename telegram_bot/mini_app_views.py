@@ -43,9 +43,8 @@ class TelegramMiniAppView(View):
             request.user = test_user
             return super().dispatch(request, *args, **kwargs)
 
-
         # Проверяем, что запрос приходит из Telegram
-п if not self._is_telegram_request(request):
+        if not self._is_telegram_request(request):
             return JsonResponse({'error': 'Unauthorized'}, status=401)
 
         # Получаем пользователя из Telegram данных
