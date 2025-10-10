@@ -44,12 +44,12 @@
         <h5 class="tg-mb-2">Быстрые действия</h5>
         <div class="row g-2">
             <div class="col-6">
-                <a href="{% url 'telegram_bot:transaction_create' %}?type=IN" class="btn tg-button-success w-100">
+                <a href="{% url 'telegram_bot:transaction_create' %}?type=IN{% if request.GET._auth %}&_auth={{ request.GET._auth|urlencode }}{% endif %}" class="btn tg-button-success w-100">
                     <i class="bi bi-plus-circle"></i> Доход
                 </a>
             </div>
             <div class="col-6">
-                <a href="{% url 'telegram_bot:transaction_create' %}?type=EX" class="btn tg-button-danger w-100">
+                <a href="{% url 'telegram_bot:transaction_create' %}?type=EX{% if request.GET._auth %}&_auth={{ request.GET._auth|urlencode }}{% endif %}" class="btn tg-button-danger w-100">
                     <i class="bi bi-dash-circle"></i> Расход
                 </a>
             </div>
@@ -61,7 +61,7 @@
     <div class="tg-card">
         <div class="d-flex justify-content-between align-items-center tg-mb-2">
             <h5 class="tg-mb-0">Кошельки</h5>
-            <a href="{% url 'telegram_bot:wallets' %}" class="btn btn-sm tg-button-secondary">
+            <a href="{% url 'telegram_bot:wallets' %}{% if request.GET._auth %}?_auth={{ request.GET._auth|urlencode }}{% endif %}" class="btn btn-sm tg-button-secondary">
                 Все кошельки
             </a>
         </div>
@@ -86,7 +86,7 @@
     <div class="tg-card">
         <div class="d-flex justify-content-between align-items-center tg-mb-2">
             <h5 class="tg-mb-0">Последние транзакции</h5>
-            <a href="{% url 'telegram_bot:transactions' %}" class="btn btn-sm tg-button-secondary">
+            <a href="{% url 'telegram_bot:transactions' %}{% if request.GET._auth %}?_auth={{ request.GET._auth|urlencode }}{% endif %}" class="btn btn-sm tg-button-secondary">
                 Все транзакции
             </a>
         </div>
@@ -130,12 +130,12 @@
         <p class="tg-text-muted">Начните с создания кошелька и добавления первой транзакции.</p>
         <div class="row g-2">
             <div class="col-6">
-                <a href="{% url 'telegram_bot:wallet_create' %}" class="btn tg-button w-100">
+                <a href="{% url 'telegram_bot:wallet_create' %}{% if request.GET._auth %}?_auth={{ request.GET._auth|urlencode }}{% endif %}" class="btn tg-button w-100">
                     <i class="bi bi-plus"></i> Создать кошелек
                 </a>
             </div>
             <div class="col-6">
-                <a href="{% url 'telegram_bot:transaction_create' %}" class="btn tg-button-secondary w-100">
+                <a href="{% url 'telegram_bot:transaction_create' %}{% if request.GET._auth %}?_auth={{ request.GET._auth|urlencode }}{% endif %}" class="btn tg-button-secondary w-100">
                     <i class="bi bi-plus"></i> Добавить транзакцию
                 </a>
             </div>

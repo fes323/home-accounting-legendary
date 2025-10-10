@@ -46,12 +46,12 @@
     <div class="tg-card">
         <div class="row g-2">
             <div class="col-6">
-                <a href="{% url 'telegram_bot:transaction_create' %}?type=IN" class="btn tg-button-success w-100">
+                <a href="{% url 'telegram_bot:transaction_create' %}?type=IN{% if request.GET._auth %}&_auth={{ request.GET._auth|urlencode }}{% endif %}" class="btn tg-button-success w-100">
                     <i class="bi bi-plus-circle"></i> Доход
                 </a>
             </div>
             <div class="col-6">
-                <a href="{% url 'telegram_bot:transaction_create' %}?type=EX" class="btn tg-button-danger w-100">
+                <a href="{% url 'telegram_bot:transaction_create' %}?type=EX{% if request.GET._auth %}&_auth={{ request.GET._auth|urlencode }}{% endif %}" class="btn tg-button-danger w-100">
                     <i class="bi bi-dash-circle"></i> Расход
                 </a>
             </div>
@@ -94,7 +94,7 @@
                         <td class="small">{{ transaction.wallet.title }}</td>
                         <td>
                             <div class="btn-group" role="group">
-                                <a href="{% url 'telegram_bot:transaction_edit' transaction.uuid %}" class="btn btn-sm btn-outline-primary">
+                                <a href="{% url 'telegram_bot:transaction_edit' transaction.uuid %}{% if request.GET._auth %}?_auth={{ request.GET._auth|urlencode }}{% endif %}" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteTransaction('{{ transaction.uuid }}')">
@@ -114,7 +114,7 @@
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Предыдущая</a>
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}{% if request.GET._auth %}&_auth={{ request.GET._auth|urlencode }}{% endif %}">Предыдущая</a>
                 </li>
                 {% endif %}
                 
@@ -125,14 +125,14 @@
                 </li>
                 {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ num }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                    <a class="page-link" href="?page={{ num }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}{% if request.GET._auth %}&_auth={{ request.GET._auth|urlencode }}{% endif %}">{{ num }}</a>
                 </li>
                 {% endif %}
                 {% endfor %}
                 
                 {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Следующая</a>
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}{% if request.GET._auth %}&_auth={{ request.GET._auth|urlencode }}{% endif %}">Следующая</a>
                 </li>
                 {% endif %}
             </ul>
@@ -147,12 +147,12 @@
         <p class="tg-text-muted">Начните с добавления первой транзакции.</p>
         <div class="row g-2">
             <div class="col-6">
-                <a href="{% url 'telegram_bot:transaction_create' %}?type=IN" class="btn tg-button-success w-100">
+                <a href="{% url 'telegram_bot:transaction_create' %}?type=IN{% if request.GET._auth %}&_auth={{ request.GET._auth|urlencode }}{% endif %}" class="btn tg-button-success w-100">
                     <i class="bi bi-plus-circle"></i> Доход
                 </a>
             </div>
             <div class="col-6">
-                <a href="{% url 'telegram_bot:transaction_create' %}?type=EX" class="btn tg-button-danger w-100">
+                <a href="{% url 'telegram_bot:transaction_create' %}?type=EX{% if request.GET._auth %}&_auth={{ request.GET._auth|urlencode }}{% endif %}" class="btn tg-button-danger w-100">
                     <i class="bi bi-dash-circle"></i> Расход
                 </a>
             </div>
@@ -172,7 +172,12 @@
 function deleteTransaction(transactionId) {
     if (confirm('Вы уверены, что хотите удалить эту транзакцию?')) {
         const form = document.getElementById('deleteForm');
-        form.action = '{% url "telegram_bot:transaction_delete" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', transactionId);
+        let actionUrl = '{% url "telegram_bot:transaction_delete" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', transactionId);
+        const authParam = new URLSearchParams(window.location.search).get('_auth');
+        if (authParam) {
+            actionUrl += (actionUrl.includes('?') ? '&' : '?') + '_auth=' + encodeURIComponent(authParam);
+        }
+        form.action = actionUrl;
         form.submit();
     }
 }
