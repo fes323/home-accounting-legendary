@@ -6,7 +6,8 @@ from typing import Optional
 
 from django.conf import settings
 from django.contrib.auth.backends import BaseBackend
-from django.contrib.auth.models import User
+
+from users.models.user import User
 
 from ..telegram_auth import get_telegram_user_from_webapp
 
