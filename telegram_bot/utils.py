@@ -288,12 +288,12 @@ def validate_amount(amount_str: str) -> tuple:
     Returns:
         Tuple (is_valid, amount, error_message)
     """
-    if not amount_str:
+    if not amount_str or not amount_str.strip():
         return False, 0.0, "Сумма не может быть пустой"
 
     try:
         # Заменяем запятую на точку для корректного парсинга
-        amount_str = amount_str.replace(',', '.')
+        amount_str = amount_str.replace(',', '.').strip()
         amount = float(amount_str)
 
         if amount <= 0:
@@ -306,6 +306,30 @@ def validate_amount(amount_str: str) -> tuple:
 
     except ValueError:
         return False, 0.0, "Неверный формат суммы. Используйте числа, например: 1000 или 1000.50"
+
+
+def safe_float_conversion(value_str: str, default: float = 0.0, field_name: str = "значение") -> tuple:
+    """
+    Безопасно конвертирует строку в float
+
+    Args:
+        value_str: Строка для конвертации
+        default: Значение по умолчанию при ошибке
+        field_name: Название поля для сообщений об ошибках
+
+    Returns:
+        Tuple (is_valid, value, error_message)
+    """
+    if not value_str or not value_str.strip():
+        return True, default, ""
+
+    try:
+        # Заменяем запятую на точку для корректного парсинга
+        value_str = value_str.replace(',', '.').strip()
+        value = float(value_str)
+        return True, value, ""
+    except ValueError:
+        return False, default, f"Неверное значение {field_name}: '{value_str}'"
 
 
 def get_currency_emoji(currency_code: str) -> str:

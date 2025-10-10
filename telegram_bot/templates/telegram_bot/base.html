@@ -492,8 +492,11 @@
                 links.forEach(function(link) {
                     const href = link.getAttribute('href');
                     if (href && !href.includes('_auth=') && !href.startsWith('http') && !href.startsWith('mailto:') && !href.startsWith('tel:')) {
+                        // Проверяем, есть ли уже параметры в URL
                         const separator = href.includes('?') ? '&' : '?';
-                        link.setAttribute('href', href + separator + '_auth=' + encodeURIComponent(authParam));
+                        // Убеждаемся, что параметр добавляется корректно
+                        const newHref = href + separator + '_auth=' + encodeURIComponent(authParam);
+                        link.setAttribute('href', newHref);
                     }
                 });
                 
@@ -503,7 +506,8 @@
                     const action = form.getAttribute('action');
                     if (action && !action.includes('_auth=') && !action.startsWith('http')) {
                         const separator = action.includes('?') ? '&' : '?';
-                        form.setAttribute('action', action + separator + '_auth=' + encodeURIComponent(authParam));
+                        const newAction = action + separator + '_auth=' + encodeURIComponent(authParam);
+                        form.setAttribute('action', newAction);
                     }
                 });
             }

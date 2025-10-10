@@ -21,7 +21,7 @@ from accounting.models.wallet import Wallet
 from users.models.user import User
 
 from .utils import (diagnose_telegram_request, get_telegram_error_response,
-                    log_telegram_request)
+                    log_telegram_request, safe_float_conversion)
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +122,21 @@ class TelegramMiniAppView(View):
             if not init_data:
                 init_data = request.GET.get(
                     'tgWebAppData') or request.POST.get('tgWebAppData')
+
+            # Проверяем, не попали ли данные аутентификации в путь URL
+            if not init_data and request.path:
+                # Ищем параметры аутентификации в пути URL (исправляем ошибки маршрутизации)
+                path_parts = request.path.split('&_auth=')
+                if len(path_parts) > 1:
+                    # Восстанавливаем правильный путь и извлекаем данные аутентификации
+                    correct_path = path_parts[0]
+                    auth_data = '&_auth='.join(path_parts[1:])
+                    logger.warning(
+                        f"Found auth data in URL path, correcting: {request.path} -> {correct_path}")
+                    # Обновляем путь в запросе для корректной обработки
+                    request.path = correct_path
+                    request.path_info = correct_path
+                    init_data = auth_data
 
             if not init_data:
                 logger.warning("No Telegram WebApp data found in request")
@@ -414,13 +429,38 @@ class TransactionCreateView(TelegramMiniAppView):
                     category = get_object_or_404(
                         TransactionCategoryTree, uuid=request.POST.get('category'), user=request.user)
 
+                # Безопасная конвертация суммы
+                amount_str = request.POST.get('amount')
+                if not amount_str or not amount_str.strip():
+                    messages.error(request, 'Сумма не может быть пустой')
+                    redirect_url = reverse('telegram_bot:transaction_create')
+                    auth_param = self.get_auth_param()
+                    if auth_param:
+                        redirect_url += f'?_auth={auth_param}'
+                    return redirect(redirect_url)
+
+                is_valid, amount, error_msg = safe_float_conversion(
+                    amount_str, 0.0, 'сумма')
+                if not is_valid:
+                    logger.error(f"Invalid amount value: '{amount_str}'")
+                    messages.error(request, error_msg)
+                    redirect_url = reverse('telegram_bot:transaction_create')
+                    auth_param = self.get_auth_param()
+                    if auth_param:
+                        redirect_url += f'?_auth={auth_param}'
+                    return redirect(redirect_url)
+
+                # Безопасная конвертация налога
+                tax_str = request.POST.get('tax', '0')
+                _, tax, _ = safe_float_conversion(tax_str, 0.0, 'налог')
+
                 transaction_obj = Transaction.objects.create(
                     t_type=request.POST.get('t_type'),
                     wallet=wallet,
                     user=request.user,
                     category=category,
-                    amount=request.POST.get('amount'),
-                    tax=request.POST.get('tax', 0),
+                    amount=amount,
+                    tax=tax,
                     description=request.POST.get('description', ''),
                     date=request.POST.get('date', datetime.now().date())
                 )
@@ -492,8 +532,36 @@ class TransactionEditView(TelegramMiniAppView):
                 transaction_obj.t_type = request.POST.get('t_type')
                 transaction_obj.wallet = wallet
                 transaction_obj.category = category
-                transaction_obj.amount = float(request.POST.get('amount'))
-                transaction_obj.tax = float(request.POST.get('tax', 0))
+
+                # Безопасная конвертация суммы
+                amount_str = request.POST.get('amount')
+                if not amount_str or not amount_str.strip():
+                    messages.error(request, 'Сумма не может быть пустой')
+                    redirect_url = reverse('telegram_bot:transaction_edit', kwargs={
+                                           'transaction_id': transaction_id})
+                    auth_param = self.get_auth_param()
+                    if auth_param:
+                        redirect_url += f'?_auth={auth_param}'
+                    return redirect(redirect_url)
+
+                is_valid, amount, error_msg = safe_float_conversion(
+                    amount_str, 0.0, 'сумма')
+                if not is_valid:
+                    logger.error(f"Invalid amount value: '{amount_str}'")
+                    messages.error(request, error_msg)
+                    redirect_url = reverse('telegram_bot:transaction_edit', kwargs={
+                                           'transaction_id': transaction_id})
+                    auth_param = self.get_auth_param()
+                    if auth_param:
+                        redirect_url += f'?_auth={auth_param}'
+                    return redirect(redirect_url)
+                transaction_obj.amount = amount
+
+                # Безопасная конвертация налога
+                tax_str = request.POST.get('tax', '0')
+                _, tax, _ = safe_float_conversion(tax_str, 0.0, 'налог')
+                transaction_obj.tax = tax
+
                 transaction_obj.description = request.POST.get(
                     'description', '')
                 transaction_obj.date = request.POST.get(
@@ -608,11 +676,24 @@ class WalletCreateView(TelegramMiniAppView):
             currency = get_object_or_404(
                 CurrencyCBR, uuid=request.POST.get('currency'))
 
+            # Безопасная конвертация баланса
+            balance_str = request.POST.get('balance', '0')
+            is_valid, balance, error_msg = safe_float_conversion(
+                balance_str, 0.0, 'баланс')
+            if not is_valid:
+                logger.error(f"Invalid balance value: '{balance_str}'")
+                messages.error(request, error_msg)
+                redirect_url = reverse('telegram_bot:wallet_create')
+                auth_param = self.get_auth_param()
+                if auth_param:
+                    redirect_url += f'?_auth={auth_param}'
+                return redirect(redirect_url)
+
             wallet = Wallet.objects.create(
                 user=request.user,
                 title=request.POST.get('title'),
                 currency=currency,
-                balance=float(request.POST.get('balance', 0)),
+                balance=balance,
                 is_family_access=request.POST.get('is_family_access') == 'on',
                 description=request.POST.get('description', '')
             )
@@ -662,7 +743,22 @@ class WalletEditView(TelegramMiniAppView):
 
             wallet.title = request.POST.get('title')
             wallet.currency = currency
-            wallet.balance = float(request.POST.get('balance', 0))
+
+            # Безопасная конвертация баланса
+            balance_str = request.POST.get('balance', '0')
+            is_valid, balance, error_msg = safe_float_conversion(
+                balance_str, 0.0, 'баланс')
+            if not is_valid:
+                logger.error(f"Invalid balance value: '{balance_str}'")
+                messages.error(request, error_msg)
+                redirect_url = reverse('telegram_bot:wallet_edit', kwargs={
+                                       'wallet_id': wallet_id})
+                auth_param = self.get_auth_param()
+                if auth_param:
+                    redirect_url += f'?_auth={auth_param}'
+                return redirect(redirect_url)
+            wallet.balance = balance
+
             wallet.is_family_access = request.POST.get(
                 'is_family_access') == 'on'
             wallet.description = request.POST.get('description', '')

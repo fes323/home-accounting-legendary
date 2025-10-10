@@ -30,9 +30,22 @@ def verify_telegram_webapp_data(init_data: str, bot_token: str) -> bool:
             logger.warning("Missing init_data or bot_token for verification")
             return False
 
-        # Парсим данные как query string
-        parsed_data = dict(urllib.parse.parse_qsl(
-            init_data, strict_parsing=True))
+        # Парсим данные как query string с более мягкой обработкой ошибок
+        try:
+            parsed_data = dict(urllib.parse.parse_qsl(
+                init_data, strict_parsing=False))
+        except Exception as parse_error:
+            logger.warning(
+                f"Failed to parse query string for verification: {parse_error}")
+            # Попробуем декодировать как URL-encoded строку
+            try:
+                decoded_data = urllib.parse.unquote(init_data)
+                parsed_data = dict(urllib.parse.parse_qsl(
+                    decoded_data, strict_parsing=False))
+            except Exception as decode_error:
+                logger.error(
+                    f"Failed to decode init_data for verification: {decode_error}")
+                return False
 
         # Извлекаем hash
         if 'hash' not in parsed_data:
@@ -88,9 +101,20 @@ def parse_telegram_webapp_data(init_data: str) -> Optional[Dict]:
             logger.warning("Empty init_data provided for parsing")
             return None
 
-        # Парсим данные как query string
-        parsed_data = dict(urllib.parse.parse_qsl(
-            init_data, strict_parsing=True))
+        # Парсим данные как query string с более мягкой обработкой ошибок
+        try:
+            parsed_data = dict(urllib.parse.parse_qsl(
+                init_data, strict_parsing=False))
+        except Exception as parse_error:
+            logger.warning(f"Failed to parse query string: {parse_error}")
+            # Попробуем декодировать как URL-encoded строку
+            try:
+                decoded_data = urllib.parse.unquote(init_data)
+                parsed_data = dict(urllib.parse.parse_qsl(
+                    decoded_data, strict_parsing=False))
+            except Exception as decode_error:
+                logger.error(f"Failed to decode init_data: {decode_error}")
+                return None
 
         if 'user' not in parsed_data:
             logger.warning("No user data found in Telegram WebApp data")
