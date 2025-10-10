@@ -94,7 +94,7 @@
                         <td class="small">{{ transaction.wallet.title }}</td>
                         <td>
                             <div class="btn-group" role="group">
-                                <a href="{% url 'telegram_bot:transaction_edit' transaction.uuid %}{% if request.GET._auth %}?_auth={{ request.GET._auth|urlencode }}{% endif %}" class="btn btn-sm btn-outline-primary">
+                                <a href="{% url 'telegram_bot:transaction_edit' transaction.uuid %}{% if auth_param %}?_auth={{ auth_param|urlencode }}{% endif %}" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteTransaction('{{ transaction.uuid }}')">
@@ -173,7 +173,7 @@ function deleteTransaction(transactionId) {
     if (confirm('Вы уверены, что хотите удалить эту транзакцию?')) {
         const form = document.getElementById('deleteForm');
         let actionUrl = '{% url "telegram_bot:transaction_delete" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', transactionId);
-        const authParam = new URLSearchParams(window.location.search).get('_auth');
+        const authParam = '{{ auth_param|escapejs }}';
         if (authParam) {
             actionUrl += (actionUrl.includes('?') ? '&' : '?') + '_auth=' + encodeURIComponent(authParam);
         }

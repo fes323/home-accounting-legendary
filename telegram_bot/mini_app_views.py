@@ -25,6 +25,13 @@ logger = logging.getLogger(__name__)
 class TelegramMiniAppView(View):
     """Базовый класс для Telegram Mini App views"""
 
+    def get_context_data(self, **kwargs):
+        """Добавляем параметр аутентификации в контекст"""
+        context = super().get_context_data(
+            **kwargs) if hasattr(super(), 'get_context_data') else {}
+        context['auth_param'] = self.request.GET.get('_auth', '')
+        return context
+
     def dispatch(self, request, *args, **kwargs):
         from django.conf import settings
 
@@ -236,15 +243,15 @@ class MiniAppDashboardView(TelegramMiniAppView):
         # Кошельки
         wallets = Wallet.objects.filter(user=request.user)
 
-        context = {
-            'total_income': total_income,
-            'total_expense': total_expense,
-            'balance': balance,
-            'recent_transactions': recent_transactions_list,
-            'wallets': wallets,
-            'transaction_count': recent_transactions.count(),
-            'user': request.user
-        }
+        context = self.get_context_data(
+            total_income=total_income,
+            total_expense=total_expense,
+            balance=balance,
+            recent_transactions=recent_transactions_list,
+            wallets=wallets,
+            transaction_count=recent_transactions.count(),
+            user=request.user
+        )
 
         return render(request, 'telegram_bot/dashboard.html', context)
 
@@ -283,18 +290,18 @@ class TransactionListView(TelegramMiniAppView):
         wallets = Wallet.objects.filter(user=request.user)
         categories = TransactionCategoryTree.objects.filter(user=request.user)
 
-        context = {
-            'page_obj': page_obj,
-            'wallets': wallets,
-            'categories': categories,
-            'filters': {
+        context = self.get_context_data(
+            page_obj=page_obj,
+            wallets=wallets,
+            categories=categories,
+            filters={
                 'type': t_type,
                 'wallet': wallet_id,
                 'category': category_id,
                 'date_from': date_from,
                 'date_to': date_to,
             }
-        }
+        )
 
         return render(request, 'telegram_bot/transactions/list.html', context)
 
@@ -306,11 +313,11 @@ class TransactionCreateView(TelegramMiniAppView):
         wallets = Wallet.objects.filter(user=request.user)
         categories = TransactionCategoryTree.objects.filter(user=request.user)
 
-        context = {
-            'wallets': wallets,
-            'categories': categories,
-            'transaction_types': Transaction.CHOICES
-        }
+        context = self.get_context_data(
+            wallets=wallets,
+            categories=categories,
+            transaction_types=Transaction.CHOICES
+        )
 
         return render(request, 'telegram_bot/transactions/create.html', context)
 
@@ -361,12 +368,12 @@ class TransactionEditView(TelegramMiniAppView):
         wallets = Wallet.objects.filter(user=request.user)
         categories = TransactionCategoryTree.objects.filter(user=request.user)
 
-        context = {
-            'transaction': transaction_obj,
-            'wallets': wallets,
-            'categories': categories,
-            'transaction_types': Transaction.CHOICES
-        }
+        context = self.get_context_data(
+            transaction=transaction_obj,
+            wallets=wallets,
+            categories=categories,
+            transaction_types=Transaction.CHOICES
+        )
 
         return render(request, 'telegram_bot/transactions/edit.html', context)
 
@@ -460,9 +467,9 @@ class WalletListView(TelegramMiniAppView):
     def get(self, request):
         wallets = Wallet.objects.filter(user=request.user).order_by('title')
 
-        context = {
-            'wallets': wallets
-        }
+        context = self.get_context_data(
+            wallets=wallets
+        )
 
         return render(request, 'telegram_bot/wallets/list.html', context)
 
@@ -474,9 +481,9 @@ class WalletCreateView(TelegramMiniAppView):
         from accounting.models.currencyCBR import CurrencyCBR
         currencies = CurrencyCBR.objects.all()
 
-        context = {
-            'currencies': currencies
-        }
+        context = self.get_context_data(
+            currencies=currencies
+        )
 
         return render(request, 'telegram_bot/wallets/create.html', context)
 
@@ -513,10 +520,10 @@ class WalletEditView(TelegramMiniAppView):
         from accounting.models.currencyCBR import CurrencyCBR
         currencies = CurrencyCBR.objects.all()
 
-        context = {
-            'wallet': wallet,
-            'currencies': currencies
-        }
+        context = self.get_context_data(
+            wallet=wallet,
+            currencies=currencies
+        )
 
         return render(request, 'telegram_bot/wallets/edit.html', context)
 
@@ -581,9 +588,9 @@ class CategoryListView(TelegramMiniAppView):
         categories = TransactionCategoryTree.objects.filter(
             user=request.user).order_by('title')
 
-        context = {
-            'categories': categories
-        }
+        context = self.get_context_data(
+            categories=categories
+        )
 
         return render(request, 'telegram_bot/categories/list.html', context)
 
@@ -594,9 +601,9 @@ class CategoryCreateView(TelegramMiniAppView):
     def get(self, request):
         categories = TransactionCategoryTree.objects.filter(user=request.user)
 
-        context = {
-            'categories': categories
-        }
+        context = self.get_context_data(
+            categories=categories
+        )
 
         return render(request, 'telegram_bot/categories/create.html', context)
 
@@ -632,10 +639,10 @@ class CategoryEditView(TelegramMiniAppView):
         categories = TransactionCategoryTree.objects.filter(
             user=request.user).exclude(uuid=category_id)
 
-        context = {
-            'category': category,
-            'categories': categories
-        }
+        context = self.get_context_data(
+            category=category,
+            categories=categories
+        )
 
         return render(request, 'telegram_bot/categories/edit.html', context)
 

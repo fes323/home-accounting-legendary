@@ -109,7 +109,7 @@
                     </button>
                 </div>
                 <div class="col-6">
-                    <a href="{% url 'telegram_bot:transactions' %}{% if request.GET._auth %}?_auth={{ request.GET._auth|urlencode }}{% endif %}" class="btn tg-button-secondary w-100">
+                    <a href="{% url 'telegram_bot:transactions' %}{% if auth_param %}?_auth={{ auth_param|urlencode }}{% endif %}" class="btn tg-button-secondary w-100">
                         <i class="bi bi-x"></i> Отмена
                     </a>
                 </div>
@@ -171,7 +171,7 @@ document.getElementById('amount').addEventListener('input', function() {
 function deleteTransaction() {
     if (confirm('Вы уверены, что хотите удалить эту транзакцию? Это действие нельзя отменить.')) {
         const form = document.getElementById('deleteForm');
-        const authParam = new URLSearchParams(window.location.search).get('_auth');
+        const authParam = '{{ auth_param|escapejs }}';
         if (authParam) {
             const currentAction = form.action;
             form.action = currentAction + (currentAction.includes('?') ? '&' : '?') + '_auth=' + encodeURIComponent(authParam);
