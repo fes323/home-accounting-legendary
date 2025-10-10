@@ -1,22 +1,27 @@
 from django.urls import path
 
 from telegram_bot.auto_auth_view import AutoAuthView
-from telegram_bot.mini_app_views import (CategoryCreateView,
-                                         CategoryDeleteView, CategoryEditView,
-                                         CategoryListView,
-                                         MiniAppDashboardView,
-                                         MiniAppDiagnosticView,
-                                         TransactionCreateView,
-                                         TransactionDeleteView,
-                                         TransactionEditView,
-                                         TransactionListView, WalletCreateView,
-                                         WalletDeleteView, WalletEditView,
-                                         WalletListView)
+from telegram_bot.mini_app_views import MiniAppDiagnosticView
+from telegram_bot.mini_app_views_refactored import (CategoryCreateView,
+                                                    CategoryDeleteView,
+                                                    CategoryEditView,
+                                                    CategoryListView,
+                                                    MiniAppDashboardView,
+                                                    TransactionCreateView,
+                                                    TransactionDeleteView,
+                                                    TransactionEditView,
+                                                    TransactionListView,
+                                                    WalletCreateView,
+                                                    WalletDeleteView,
+                                                    WalletEditView,
+                                                    WalletListView)
 from telegram_bot.mobile_debug_view import MobileDebugView
 from telegram_bot.test_auth_view import TestAuthView
 from telegram_bot.views import TelegramWebhookView, telegram_webhook
-from telegram_bot.webapp_auth_view import (TelegramWebAppAuthView,
-                                           TelegramWebAppTestView)
+from telegram_bot.views.telegram_auth_view import (TelegramWebAppAuthView,
+                                                   TelegramWebAppLogoutView,
+                                                   TelegramWebAppRedirectView,
+                                                   TelegramWebAppStatusView)
 from telegram_bot.webapp_integration_view import WebAppIntegrationView
 
 app_name = 'telegram_bot'
@@ -28,7 +33,10 @@ urlpatterns = [
 
     # WebApp API endpoints
     path('webapp-auth/', TelegramWebAppAuthView.as_view(), name='webapp_auth'),
-    path('webapp-test/', TelegramWebAppTestView.as_view(), name='webapp_test'),
+    path('webapp-logout/', TelegramWebAppLogoutView.as_view(), name='webapp_logout'),
+    path('webapp-status/', TelegramWebAppStatusView.as_view(), name='webapp_status'),
+    path('webapp-redirect/', TelegramWebAppRedirectView.as_view(),
+         name='webapp_redirect'),
     path('webapp-integration/', WebAppIntegrationView.as_view(),
          name='webapp_integration'),
     path('auto-auth/', AutoAuthView.as_view(), name='auto_auth'),

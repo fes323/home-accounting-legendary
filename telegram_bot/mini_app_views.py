@@ -3,25 +3,18 @@ import logging
 from datetime import datetime, timedelta
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q, Sum
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.utils.decorators import method_decorator
-from django.views import View
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
 
 from accounting.models.transaction import Transaction
 from accounting.models.transactionCategory import TransactionCategoryTree
 from accounting.models.wallet import Wallet
-from users.models.user import User
 
-from .utils import (diagnose_telegram_request, get_telegram_error_response,
-                    log_telegram_request, safe_float_conversion)
+from .utils import safe_float_conversion
+from .views.telegram_base_view import TelegramWebAppAuthenticatedView
 
 logger = logging.getLogger(__name__)
 

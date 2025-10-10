@@ -483,35 +483,54 @@
     
     <!-- Дополнительные скрипты -->
     <script>
-        // Автоматическое добавление параметра _auth ко всем ссылкам
+        // Новая система аутентификации через сессии Django
         document.addEventListener('DOMContentLoaded', function() {
-            const authParam = '{{ auth_param|default:""|escapejs }}';
-            if (authParam) {
-                // Добавляем _auth ко всем ссылкам на странице
-                const links = document.querySelectorAll('a[href]');
-                links.forEach(function(link) {
-                    const href = link.getAttribute('href');
-                    if (href && !href.includes('_auth=') && !href.startsWith('http') && !href.startsWith('mailto:') && !href.startsWith('tel:')) {
-                        // Проверяем, есть ли уже параметры в URL
-                        const separator = href.includes('?') ? '&' : '?';
-                        // Убеждаемся, что параметр добавляется корректно
-                        const newHref = href + separator + '_auth=' + encodeURIComponent(authParam);
-                        link.setAttribute('href', newHref);
+            console.log('Telegram WebApp loaded with session-based authentication');
+            
+            // Проверяем статус аутентификации
+            fetch('/telegram/webapp-status/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.authenticated) {
+                        console.log('User authenticated:', data.user.username);
+                        // Обновляем информацию о пользователе в интерфейсе
+                        updateUserInfo(data.user);
+                    } else {
+                        console.log('User not authenticated');
+                        // Перенаправляем на страницу авторизации
+                        window.location.href = '/telegram/auto-auth/';
                     }
+                })
+                .catch(error => {
+                    console.error('Error checking auth status:', error);
                 });
-                
-                // Добавляем _auth к формам
-                const forms = document.querySelectorAll('form[action]');
-                forms.forEach(function(form) {
-                    const action = form.getAttribute('action');
-                    if (action && !action.includes('_auth=') && !action.startsWith('http')) {
-                        const separator = action.includes('?') ? '&' : '?';
-                        const newAction = action + separator + '_auth=' + encodeURIComponent(authParam);
-                        form.setAttribute('action', newAction);
-                    }
-                });
-            }
         });
+        
+        function updateUserInfo(user) {
+            // Обновляем информацию о пользователе в интерфейсе
+            const userElements = document.querySelectorAll('.user-info');
+            userElements.forEach(element => {
+                element.textContent = user.first_name + ' ' + user.last_name;
+            });
+        }
+        
+        function logout() {
+            fetch('/telegram/webapp-logout/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/telegram/auto-auth/';
+                }
+            })
+            .catch(error => {
+                console.error('Error during logout:', error);
+            });
+        }
     </script>
     
     {% block extra_js %}{% endblock %}

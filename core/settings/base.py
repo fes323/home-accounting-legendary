@@ -6,6 +6,13 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+# Настройки аутентификации
+AUTHENTICATION_BACKENDS = [
+    'telegram_bot.backends.telegram_auth.TelegramWebAppAuthBackend',
+    'telegram_bot.backends.telegram_auth.TelegramWebAppSessionBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 # Загружаем переменные окружения из .env файла
 load_dotenv(BASE_DIR / '.env')
 
@@ -44,8 +51,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     # Кастомный CSRF middleware для Telegram
     'telegram_bot.middleware_telegram.TelegramWebAppMiddleware',
-    # Автоматическое перенаправление на авторизацию
-    'telegram_bot.middleware_auth_redirect.TelegramAuthRedirectMiddleware',
+    # Новая система аутентификации Telegram WebApp
+    'telegram_bot.middleware_telegram_auth.TelegramWebAppAuthMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     # Безопасность для Telegram WebApp

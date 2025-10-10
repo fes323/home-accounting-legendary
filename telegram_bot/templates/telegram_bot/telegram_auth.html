@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#007bff">
+    <title>Авторизация - Домашняя бухгалтерия</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .auth-container {
+            text-align: center;
+            max-width: 300px;
+            width: 100%;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--tg-theme-hint-color, #999999);
+            border-top: 4px solid var(--tg-theme-button-color, #007bff);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .status-message {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .status-success {
+            background: var(--tg-theme-button-color, #007bff);
+            color: var(--tg-theme-button-text-color, #ffffff);
+        }
+        
+        .status-error {
+            background: var(--tg-theme-destructive-text-color, #ff0000);
+            color: var(--tg-theme-button-text-color, #ffffff);
+        }
+        
+        .status-info {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            color: var(--tg-theme-text-color, #000000);
+        }
+        
+        .debug-info {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            color: var(--tg-theme-text-color, #000000);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-size: 12px;
+            text-align: left;
+            display: none;
+        }
+        
+        .debug-info.show {
+            display: block;
+        }
+        
+        .debug-toggle {
+            background: none;
+            border: none;
+            color: var(--tg-theme-link-color, #007bff);
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        
+        .retry-button {
+            background: var(--tg-theme-button-color, #007bff);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        
+        .retry-button:hover {
+            opacity: 0.8;
+        }
+        
+        .retry-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="spinner" id="spinner"></div>
+        
+        <div id="statusMessage" class="status-message status-info">
+            Инициализация Telegram WebApp...
+        </div>
+        
+        <button id="retryButton" class="retry-button" style="display: none;" onclick="retryAuth()">
+            Попробовать снова
+        </button>
+        
+        <button id="debugToggle" class="debug-toggle" onclick="toggleDebug()">
+            Показать отладочную информацию
+        </button>
+        
+        <div id="debugInfo" class="debug-info">
+            <h4>Отладочная информация:</h4>
+            <p><strong>Telegram WebApp доступен:</strong> <span id="telegramAvailable">Проверка...</span></p>
+            <p><strong>initData:</strong> <span id="initDataStatus">Проверка...</span></p>
+            <p><strong>initDataUnsafe:</strong> <span id="initDataUnsafeStatus">Проверка...</span></p>
+            <p><strong>User-Agent:</strong> <span id="userAgent">Проверка...</span></p>
+            <p><strong>Referer:</strong> <span id="referer">Проверка...</span></p>
+            <p><strong>URL:</strong> <span id="currentUrl">Проверка...</span></p>
+        </div>
+    </div>
+
+    <script>
+        let initData = null;
+        let initDataUnsafe = null;
+        let authAttempts = 0;
+        const maxAttempts = 3;
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatus('Проверка Telegram WebApp...', 'info');
+            
+            // Проверяем доступность Telegram WebApp
+            if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+                updateDebugInfo();
+                performAuth();
+            } else {
+                updateStatus('Telegram WebApp недоступен', 'error');
+                showRetryButton();
+            }
+        });
+
+        function updateStatus(message, type) {
+            const statusElement = document.getElementById('statusMessage');
+            statusElement.textContent = message;
+            statusElement.className = `status-message status-${type}`;
+        }
+
+        function updateDebugInfo() {
+            document.getElementById('telegramAvailable').textContent = 
+                typeof Telegram !== 'undefined' ? 'Да' : 'Нет';
+            
+            if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+                initData = Telegram.WebApp.initData;
+                initDataUnsafe = Telegram.WebApp.initDataUnsafe;
+                
+                document.getElementById('initDataStatus').textContent = 
+                    initData ? 'Доступен' : 'Не доступен';
+                document.getElementById('initDataUnsafeStatus').textContent = 
+                    initDataUnsafe ? 'Доступен' : 'Не доступен';
+            }
+            
+            document.getElementById('userAgent').textContent = navigator.userAgent;
+            document.getElementById('referer').textContent = document.referrer || 'Не установлен';
+            document.getElementById('currentUrl').textContent = window.location.href;
+        }
+
+        function showRetryButton() {
+            document.getElementById('retryButton').style.display = 'block';
+        }
+
+        function hideRetryButton() {
+            document.getElementById('retryButton').style.display = 'none';
+        }
+
+        function toggleDebug() {
+            const debugInfo = document.getElementById('debugInfo');
+            const toggle = document.getElementById('debugToggle');
+            
+            if (debugInfo.classList.contains('show')) {
+                debugInfo.classList.remove('show');
+                toggle.textContent = 'Показать отладочную информацию';
+            } else {
+                debugInfo.classList.add('show');
+                toggle.textContent = 'Скрыть отладочную информацию';
+            }
+        }
+
+        async function performAuth() {
+            try {
+                updateStatus('Получение данных аутентификации...', 'info');
+                
+                if (!initData) {
+                    updateStatus('Данные аутентификации не найдены', 'error');
+                    showRetryButton();
+                    return;
+                }
+                
+                updateStatus('Авторизация...', 'info');
+                
+                // Отправляем данные на сервер для авторизации
+                const response = await fetch('/telegram/webapp-auth/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: `_auth=${encodeURIComponent(initData)}`
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateStatus('Авторизация успешна!', 'success');
+                    hideRetryButton();
+                    
+                    // Перенаправляем на главную страницу
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || '/telegram/mini-app/';
+                    }, 1000);
+                } else {
+                    throw new Error(data.error || 'Ошибка авторизации');
+                }
+                
+            } catch (error) {
+                console.error('Auth error:', error);
+                authAttempts++;
+                
+                if (authAttempts < maxAttempts) {
+                    updateStatus(`Ошибка авторизации (попытка ${authAttempts}/${maxAttempts}): ${error.message}`, 'error');
+                    showRetryButton();
+                } else {
+                    updateStatus('Не удалось авторизоваться. Попробуйте позже.', 'error');
+                    showRetryButton();
+                }
+            }
+        }
+
+        function retryAuth() {
+            authAttempts = 0;
+            hideRetryButton();
+            updateStatus('Повторная попытка авторизации...', 'info');
+            
+            if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+                updateDebugInfo();
+                performAuth();
+            } else {
+                updateStatus('Telegram WebApp недоступен', 'error');
+                showRetryButton();
+            }
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>
