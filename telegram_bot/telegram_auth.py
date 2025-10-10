@@ -49,7 +49,8 @@ def verify_telegram_webapp_data(init_data: str, bot_token: str) -> bool:
 
         # Извлекаем hash
         if 'hash' not in parsed_data:
-            logger.warning("No hash found in Telegram WebApp data")
+            logger.warning(
+                f"No hash found in Telegram WebApp data. Available keys: {list(parsed_data.keys())}")
             return False
 
         received_hash = parsed_data.pop('hash')
@@ -117,7 +118,8 @@ def parse_telegram_webapp_data(init_data: str) -> Optional[Dict]:
                 return None
 
         if 'user' not in parsed_data:
-            logger.warning("No user data found in Telegram WebApp data")
+            logger.warning(
+                f"No user data found in Telegram WebApp data. Available keys: {list(parsed_data.keys())}")
             return None
 
         user_data = json.loads(parsed_data['user'])

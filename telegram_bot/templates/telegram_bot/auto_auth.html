@@ -160,6 +160,21 @@
                 if (!initData) {
                     updateStatus('Данные авторизации не найдены', 'error');
                     showDebug();
+                    
+                    // Показываем дополнительную информацию для диагностики
+                    const debugInfo = document.getElementById('debugInfo');
+                    if (debugInfo) {
+                        debugInfo.innerHTML += `
+                            <div class="debug-section">
+                                <h4>Диагностика проблемы:</h4>
+                                <p><strong>User-Agent:</strong> ${navigator.userAgent}</p>
+                                <p><strong>Referer:</strong> ${document.referrer || 'Не установлен'}</p>
+                                <p><strong>URL:</strong> ${window.location.href}</p>
+                                <p><strong>Telegram WebApp доступен:</strong> ${typeof Telegram !== 'undefined' ? 'Да' : 'Нет'}</p>
+                                <p><strong>initDataUnsafe:</strong> ${initDataUnsafe ? 'Доступен' : 'Не доступен'}</p>
+                            </div>
+                        `;
+                    }
                     return;
                 }
                 

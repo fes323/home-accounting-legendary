@@ -71,8 +71,25 @@ class TelegramMiniAppView(View):
             user = self._get_telegram_user(request)
             if not user:
                 log_telegram_request(request, 'WARNING')
-                error_response = get_telegram_error_response('user_not_found')
-                return JsonResponse(error_response, status=error_response['code'])
+
+                # Если это запрос из Telegram, но нет данных аутентификации,
+                # перенаправляем на страницу авторизации
+                user_agent = request.META.get('HTTP_USER_AGENT', '')
+                referer = request.META.get('HTTP_REFERER', '')
+                is_telegram_browser = (
+                    'TelegramBot' in user_agent or 'Telegram' in user_agent or
+                    'web.telegram.org' in referer or 'webk.telegram.org' in referer or 'webz.telegram.org' in referer
+                )
+
+                if is_telegram_browser:
+                    # Перенаправляем на страницу авторизации
+                    auth_url = reverse('telegram_bot:auto_auth')
+                    return redirect(auth_url)
+                else:
+                    # Обычная ошибка для не-Telegram запросов
+                    error_response = get_telegram_error_response(
+                        'user_not_found')
+                    return JsonResponse(error_response, status=error_response['code'])
 
             request.user = user
             return super().dispatch(request, *args, **kwargs)
@@ -98,19 +115,21 @@ class TelegramMiniAppView(View):
         if init_data:
             return True
 
-        # Проверяем User-Agent Telegram WebApp
-        user_agent = request.META.get('HTTP_USER_AGENT', '')
-        if 'TelegramBot' in user_agent or 'Telegram' in user_agent:
+        # Проверяем, не попали ли данные аутентификации в путь URL
+        if request.path and '&_auth=' in request.path:
             return True
 
         # Проверяем заголовки, которые отправляет Telegram
         if 'X-Telegram-Bot-Api-Secret-Token' in request.META:
             return True
 
-        # Проверяем Referer от Telegram
+        # Проверяем Referer от Telegram (только если есть данные аутентификации)
         referer = request.META.get('HTTP_REFERER', '')
-        if 'web.telegram.org' in referer or 'webk.telegram.org' in referer or 'webz.telegram.org' in referer:
-            return True
+        if ('web.telegram.org' in referer or 'webk.telegram.org' in referer or 'webz.telegram.org' in referer):
+            # Дополнительно проверяем User-Agent для подтверждения
+            user_agent = request.META.get('HTTP_USER_AGENT', '')
+            if 'TelegramBot' in user_agent or 'Telegram' in user_agent:
+                return True
 
         return False
 
@@ -139,7 +158,13 @@ class TelegramMiniAppView(View):
                     init_data = auth_data
 
             if not init_data:
-                logger.warning("No Telegram WebApp data found in request")
+                # Логируем подробную информацию о запросе для диагностики
+                user_agent = request.META.get('HTTP_USER_AGENT', '')
+                referer = request.META.get('HTTP_REFERER', '')
+                logger.warning(f"No Telegram WebApp data found in request. "
+                               f"Path: {request.path}, "
+                               f"User-Agent: {user_agent[:100]}, "
+                               f"Referer: {referer[:100]}")
                 return None
 
             # Логируем полученные данные для отладки (без полного содержимого)

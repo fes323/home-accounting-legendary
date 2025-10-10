@@ -44,6 +44,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     # Кастомный CSRF middleware для Telegram
     'telegram_bot.middleware_telegram.TelegramWebAppMiddleware',
+    # Автоматическое перенаправление на авторизацию
+    'telegram_bot.middleware_auth_redirect.TelegramAuthRedirectMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     # Безопасность для Telegram WebApp
