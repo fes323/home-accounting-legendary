@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -208,6 +209,35 @@ SESSION_COOKIE_SECURE = os.getenv(
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
 LOG_FILE_PATH = os.getenv('LOG_FILE_PATH', '/var/log/django/wallet_app.log')
 
+# Проверяем доступность файла логов
+
+
+def get_log_handlers():
+    """Получает доступные обработчики логов"""
+    handlers = ['console']
+
+    # Пытаемся добавить файловый обработчик, если есть права
+    try:
+        log_dir = Path(LOG_FILE_PATH).parent
+        log_dir.mkdir(parents=True, exist_ok=True)
+
+        # Проверяем права на запись
+        test_file = log_dir / 'test_write.tmp'
+        with open(test_file, 'w') as f:
+            f.write('test')
+        test_file.unlink()
+
+        handlers.append('file')
+    except (PermissionError, OSError):
+        # Если нет прав, используем только консоль
+        pass
+
+    return handlers
+
+
+# Получаем доступные обработчики
+available_handlers = get_log_handlers()
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -220,9 +250,11 @@ LOGGING = {
     'handlers': {
         'file': {
             'level': LOG_LEVEL,
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': LOG_FILE_PATH,
             'formatter': 'verbose',
+            'maxBytes': 1024*1024*10,  # 10MB
+            'backupCount': 5,
         },
         'console': {
             'level': LOG_LEVEL,
@@ -231,17 +263,17 @@ LOGGING = {
         },
     },
     'root': {
-        'handlers': ['file', 'console'],
+        'handlers': available_handlers,
         'level': LOG_LEVEL,
     },
     'loggers': {
         'django': {
-            'handlers': ['file', 'console'],
+            'handlers': available_handlers,
             'level': LOG_LEVEL,
             'propagate': False,
         },
         'telegram_bot': {
-            'handlers': ['file', 'console'],
+            'handlers': available_handlers,
             'level': LOG_LEVEL,
             'propagate': False,
         },
