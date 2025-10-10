@@ -9,6 +9,7 @@ from django.db import transaction
 from django.db.models import Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -300,9 +301,9 @@ class TransactionListView(TelegramMiniAppView):
         if t_type:
             transactions = transactions.filter(t_type=t_type)
         if wallet_id:
-            transactions = transactions.filter(wallet_id=wallet_id)
+            transactions = transactions.filter(wallet__uuid=wallet_id)
         if category_id:
-            transactions = transactions.filter(category_id=category_id)
+            transactions = transactions.filter(category__uuid=category_id)
         if date_from:
             transactions = transactions.filter(date__gte=date_from)
         if date_to:
@@ -377,13 +378,23 @@ class TransactionCreateView(TelegramMiniAppView):
                 wallet.save()
 
                 messages.success(request, 'Транзакция успешно создана!')
-                return redirect('telegram_bot:transactions')
+                # Добавляем auth_param к редиректу
+                redirect_url = reverse('telegram_bot:transactions')
+                auth_param = request.GET.get('_auth', '')
+                if auth_param:
+                    redirect_url += f'?_auth={auth_param}'
+                return redirect(redirect_url)
 
         except Exception as e:
             logger.error(f"Error creating transaction: {e}")
             messages.error(
                 request, f'Ошибка при создании транзакции: {str(e)}')
-            return redirect('telegram_bot:transaction_create')
+            # Добавляем auth_param к редиректу при ошибке
+            redirect_url = reverse('telegram_bot:transaction_create')
+            auth_param = request.GET.get('_auth', '')
+            if auth_param:
+                redirect_url += f'?_auth={auth_param}'
+            return redirect(redirect_url)
 
 
 class TransactionEditView(TelegramMiniAppView):
@@ -450,13 +461,24 @@ class TransactionEditView(TelegramMiniAppView):
                 wallet.save()
 
                 messages.success(request, 'Транзакция успешно обновлена!')
-                return redirect('telegram_bot:transactions')
+                # Добавляем auth_param к редиректу
+                redirect_url = reverse('telegram_bot:transactions')
+                auth_param = request.GET.get('_auth', '')
+                if auth_param:
+                    redirect_url += f'?_auth={auth_param}'
+                return redirect(redirect_url)
 
         except Exception as e:
             logger.error(f"Error updating transaction: {e}")
             messages.error(
                 request, f'Ошибка при обновлении транзакции: {str(e)}')
-            return redirect('telegram_bot:transaction_edit', transaction_id=transaction_id)
+            # Добавляем auth_param к редиректу при ошибке
+            redirect_url = reverse('telegram_bot:transaction_edit', kwargs={
+                                   'transaction_id': transaction_id})
+            auth_param = request.GET.get('_auth', '')
+            if auth_param:
+                redirect_url += f'?_auth={auth_param}'
+            return redirect(redirect_url)
 
 
 class TransactionDeleteView(TelegramMiniAppView):
@@ -479,13 +501,23 @@ class TransactionDeleteView(TelegramMiniAppView):
                 transaction_obj.delete()
 
                 messages.success(request, 'Транзакция успешно удалена!')
-                return redirect('telegram_bot:transactions')
+                # Добавляем auth_param к редиректу
+                redirect_url = reverse('telegram_bot:transactions')
+                auth_param = request.GET.get('_auth', '')
+                if auth_param:
+                    redirect_url += f'?_auth={auth_param}'
+                return redirect(redirect_url)
 
         except Exception as e:
             logger.error(f"Error deleting transaction: {e}")
             messages.error(
                 request, f'Ошибка при удалении транзакции: {str(e)}')
-            return redirect('telegram_bot:transactions')
+            # Добавляем auth_param к редиректу при ошибке
+            redirect_url = reverse('telegram_bot:transactions')
+            auth_param = request.GET.get('_auth', '')
+            if auth_param:
+                redirect_url += f'?_auth={auth_param}'
+            return redirect(redirect_url)
 
 
 class WalletListView(TelegramMiniAppView):
@@ -519,7 +551,7 @@ class WalletCreateView(TelegramMiniAppView):
             from accounting.models.currencyCBR import CurrencyCBR
 
             currency = get_object_or_404(
-                CurrencyCBR, id=request.POST.get('currency'))
+                CurrencyCBR, uuid=request.POST.get('currency'))
 
             wallet = Wallet.objects.create(
                 user=request.user,
@@ -531,12 +563,22 @@ class WalletCreateView(TelegramMiniAppView):
             )
 
             messages.success(request, 'Кошелек успешно создан!')
-            return redirect('telegram_bot:wallets')
+            # Добавляем auth_param к редиректу
+            redirect_url = reverse('telegram_bot:wallets')
+            auth_param = request.GET.get('_auth', '')
+            if auth_param:
+                redirect_url += f'?_auth={auth_param}'
+            return redirect(redirect_url)
 
         except Exception as e:
             logger.error(f"Error creating wallet: {e}")
             messages.error(request, f'Ошибка при создании кошелька: {str(e)}')
-            return redirect('telegram_bot:wallet_create')
+            # Добавляем auth_param к редиректу при ошибке
+            redirect_url = reverse('telegram_bot:wallet_create')
+            auth_param = request.GET.get('_auth', '')
+            if auth_param:
+                redirect_url += f'?_auth={auth_param}'
+            return redirect(redirect_url)
 
 
 class WalletEditView(TelegramMiniAppView):
@@ -561,7 +603,7 @@ class WalletEditView(TelegramMiniAppView):
             wallet = get_object_or_404(
                 Wallet, uuid=wallet_id, user=request.user)
             currency = get_object_or_404(
-                CurrencyCBR, id=request.POST.get('currency'))
+                CurrencyCBR, uuid=request.POST.get('currency'))
 
             wallet.title = request.POST.get('title')
             wallet.currency = currency
@@ -572,13 +614,24 @@ class WalletEditView(TelegramMiniAppView):
             wallet.save()
 
             messages.success(request, 'Кошелек успешно обновлен!')
-            return redirect('telegram_bot:wallets')
+            # Добавляем auth_param к редиректу
+            redirect_url = reverse('telegram_bot:wallets')
+            auth_param = request.GET.get('_auth', '')
+            if auth_param:
+                redirect_url += f'?_auth={auth_param}'
+            return redirect(redirect_url)
 
         except Exception as e:
             logger.error(f"Error updating wallet: {e}")
             messages.error(
                 request, f'Ошибка при обновлении кошелька: {str(e)}')
-            return redirect('telegram_bot:wallet_edit', wallet_id=wallet_id)
+            # Добавляем auth_param к редиректу при ошибке
+            redirect_url = reverse('telegram_bot:wallet_edit', kwargs={
+                                   'wallet_id': wallet_id})
+            auth_param = request.GET.get('_auth', '')
+            if auth_param:
+                redirect_url += f'?_auth={auth_param}'
+            return redirect(redirect_url)
 
 
 class WalletDeleteView(TelegramMiniAppView):
@@ -595,17 +648,32 @@ class WalletDeleteView(TelegramMiniAppView):
             if transaction_count > 0:
                 messages.error(
                     request, f'Нельзя удалить кошелек с {transaction_count} транзакциями')
-                return redirect('telegram_bot:wallets')
+                # Добавляем auth_param к редиректу
+                redirect_url = reverse('telegram_bot:wallets')
+                auth_param = request.GET.get('_auth', '')
+                if auth_param:
+                    redirect_url += f'?_auth={auth_param}'
+                return redirect(redirect_url)
 
             wallet.delete()
 
             messages.success(request, 'Кошелек успешно удален!')
-            return redirect('telegram_bot:wallets')
+            # Добавляем auth_param к редиректу
+            redirect_url = reverse('telegram_bot:wallets')
+            auth_param = request.GET.get('_auth', '')
+            if auth_param:
+                redirect_url += f'?_auth={auth_param}'
+            return redirect(redirect_url)
 
         except Exception as e:
             logger.error(f"Error deleting wallet: {e}")
             messages.error(request, f'Ошибка при удалении кошелька: {str(e)}')
-            return redirect('telegram_bot:wallets')
+            # Добавляем auth_param к редиректу при ошибке
+            redirect_url = reverse('telegram_bot:wallets')
+            auth_param = request.GET.get('_auth', '')
+            if auth_param:
+                redirect_url += f'?_auth={auth_param}'
+            return redirect(redirect_url)
 
 
 class CategoryListView(TelegramMiniAppView):
@@ -649,12 +717,22 @@ class CategoryCreateView(TelegramMiniAppView):
             )
 
             messages.success(request, 'Категория успешно создана!')
-            return redirect('telegram_bot:categories')
+            # Добавляем auth_param к редиректу
+            redirect_url = reverse('telegram_bot:categories')
+            auth_param = request.GET.get('_auth', '')
+            if auth_param:
+                redirect_url += f'?_auth={auth_param}'
+            return redirect(redirect_url)
 
         except Exception as e:
             logger.error(f"Error creating category: {e}")
             messages.error(request, f'Ошибка при создании категории: {str(e)}')
-            return redirect('telegram_bot:category_create')
+            # Добавляем auth_param к редиректу при ошибке
+            redirect_url = reverse('telegram_bot:category_create')
+            auth_param = request.GET.get('_auth', '')
+            if auth_param:
+                redirect_url += f'?_auth={auth_param}'
+            return redirect(redirect_url)
 
 
 class CategoryEditView(TelegramMiniAppView):
@@ -689,7 +767,12 @@ class CategoryEditView(TelegramMiniAppView):
             category.save()
 
             messages.success(request, 'Категория успешно обновлена!')
-            return redirect('telegram_bot:categories')
+            # Добавляем auth_param к редиректу
+            redirect_url = reverse('telegram_bot:categories')
+            auth_param = request.GET.get('_auth', '')
+            if auth_param:
+                redirect_url += f'?_auth={auth_param}'
+            return redirect(redirect_url)
 
         except Exception as e:
             logger.error(f"Error updating category: {e}")
@@ -712,21 +795,41 @@ class CategoryDeleteView(TelegramMiniAppView):
             if transaction_count > 0:
                 messages.error(
                     request, f'Нельзя удалить категорию с {transaction_count} транзакциями')
-                return redirect('telegram_bot:categories')
+                # Добавляем auth_param к редиректу
+                redirect_url = reverse('telegram_bot:categories')
+                auth_param = request.GET.get('_auth', '')
+                if auth_param:
+                    redirect_url += f'?_auth={auth_param}'
+                return redirect(redirect_url)
 
             # Проверяем, есть ли дочерние категории
             children_count = category.get_children().count()
             if children_count > 0:
                 messages.error(
                     request, f'Нельзя удалить категорию с {children_count} подкатегориями')
-                return redirect('telegram_bot:categories')
+                # Добавляем auth_param к редиректу
+                redirect_url = reverse('telegram_bot:categories')
+                auth_param = request.GET.get('_auth', '')
+                if auth_param:
+                    redirect_url += f'?_auth={auth_param}'
+                return redirect(redirect_url)
 
             category.delete()
 
             messages.success(request, 'Категория успешно удалена!')
-            return redirect('telegram_bot:categories')
+            # Добавляем auth_param к редиректу
+            redirect_url = reverse('telegram_bot:categories')
+            auth_param = request.GET.get('_auth', '')
+            if auth_param:
+                redirect_url += f'?_auth={auth_param}'
+            return redirect(redirect_url)
 
         except Exception as e:
             logger.error(f"Error deleting category: {e}")
             messages.error(request, f'Ошибка при удалении категории: {str(e)}')
-            return redirect('telegram_bot:categories')
+            # Добавляем auth_param к редиректу при ошибке
+            redirect_url = reverse('telegram_bot:categories')
+            auth_param = request.GET.get('_auth', '')
+            if auth_param:
+                redirect_url += f'?_auth={auth_param}'
+            return redirect(redirect_url)

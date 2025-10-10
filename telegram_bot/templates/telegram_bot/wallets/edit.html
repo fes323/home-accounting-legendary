@@ -23,7 +23,7 @@
                 <select class="tg-form-control" id="currency" name="currency" required>
                     <option value="">Выберите валюту</option>
                     {% for currency in currencies %}
-                    <option value="{{ currency.id }}" {% if currency.id == wallet.currency.id %}selected{% endif %}>
+                    <option value="{{ currency.uuid }}" {% if currency.uuid == wallet.currency.uuid %}selected{% endif %}>
                         {{ currency.char_code }} - {{ currency.name }}
                     </option>
                     {% endfor %}
