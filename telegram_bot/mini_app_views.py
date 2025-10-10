@@ -14,7 +14,6 @@ from accounting.models.transactionCategory import TransactionCategoryTree
 from accounting.models.wallet import Wallet
 
 from .utils import safe_float_conversion
-from .views.telegram_base_view import TelegramWebAppAuthenticatedView
 
 logger = logging.getLogger(__name__)
 
