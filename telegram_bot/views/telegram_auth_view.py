@@ -61,7 +61,7 @@ class TelegramWebAppAuthView(View):
                 return JsonResponse({
                     'success': True,
                     'user': {
-                        'id': user.id,
+                        'id': str(user.uuid),
                         'username': user.username,
                         'first_name': user.first_name,
                         'last_name': user.last_name,
@@ -125,7 +125,7 @@ class TelegramWebAppStatusView(View):
             return JsonResponse({
                 'authenticated': True,
                 'user': {
-                    'id': request.user.id,
+                    'id': str(request.user.uuid),
                     'username': request.user.username,
                     'first_name': request.user.first_name,
                     'last_name': request.user.last_name,

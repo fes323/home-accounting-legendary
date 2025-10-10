@@ -15,4 +15,4 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         """Возвращает только текущего пользователя"""
-        return User.objects.filter(id=self.request.user.id)
+        return User.objects.filter(uuid=self.request.user.uuid)
