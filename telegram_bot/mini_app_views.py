@@ -101,9 +101,6 @@ class TelegramMiniAppView(View):
                 init_data = request.GET.get(
                     'tgWebAppData') or request.POST.get('tgWebAppData')
 
-            logger.info(
-                f"Telegram WebApp init_data: {init_data[:100] if init_data else 'None'}...")
-
             if not init_data:
                 logger.warning("No Telegram WebApp data found in request")
                 return None
@@ -112,17 +109,20 @@ class TelegramMiniAppView(View):
             from django.conf import settings
             bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', '')
 
-            logger.info(f"Bot token present: {bool(bot_token)}")
-
             if bot_token:
                 try:
                     from aiogram.utils.web_app import \
                         safe_parse_webapp_init_data
                     webapp_data = safe_parse_webapp_init_data(
                         bot_token, init_data)
-                    logger.info(f"Parsed webapp_data: {webapp_data}")
-                    user_data = webapp_data.get('user', {})
-                    logger.info(f"Extracted user_data: {user_data}")
+                    # WebAppInitData - это объект с атрибутами, не словарь
+                    user_obj = webapp_data.user
+                    user_data = {
+                        'id': user_obj.id,
+                        'first_name': user_obj.first_name,
+                        'last_name': user_obj.last_name,
+                        'username': user_obj.username,
+                    }
                 except (ValueError, ImportError) as e:
                     logger.warning(
                         f"Failed to parse WebApp data with aiogram: {e}")
@@ -130,13 +130,11 @@ class TelegramMiniAppView(View):
                     from .telegram_auth import get_telegram_user_from_webapp
                     user_data = get_telegram_user_from_webapp(
                         init_data, verify_signature=True)
-                    logger.info(f"Fallback user_data: {user_data}")
             else:
                 # Если нет токена, используем старую логику без проверки подписи
                 from .telegram_auth import get_telegram_user_from_webapp
                 user_data = get_telegram_user_from_webapp(
                     init_data, verify_signature=False)
-                logger.info(f"No token user_data: {user_data}")
 
             if not user_data:
                 logger.warning(
@@ -144,14 +142,12 @@ class TelegramMiniAppView(View):
                 return None
 
             telegram_id = user_data.get('id')
-            logger.info(f"Telegram ID: {telegram_id}")
             if not telegram_id:
                 logger.warning("No telegram_id found in user data")
                 return None
 
             # Ищем или создаем пользователя
             user = User.objects.filter(telegram_id=telegram_id).first()
-            logger.info(f"Found existing user: {user}")
             if not user:
                 # Создаем нового пользователя
                 username = user_data.get('username') or f"tg_{telegram_id}"
