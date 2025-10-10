@@ -113,7 +113,7 @@ function deleteCategory(categoryId, categoryTitle) {
     if (confirm(`Вы уверены, что хотите удалить категорию "${categoryTitle}"?\n\nВнимание: нельзя удалить категорию с транзакциями или подкатегориями.`)) {
         const form = document.getElementById('deleteForm');
         let actionUrl = '{% url "telegram_bot:category_delete" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', categoryId);
-        const authParam = '{{ auth_param|escapejs }}';
+        const authParam = '{{ auth_param|default:""|escapejs }}';
         if (authParam) {
             actionUrl += (actionUrl.includes('?') ? '&' : '?') + '_auth=' + encodeURIComponent(authParam);
         }

@@ -27,9 +27,10 @@ class TelegramMiniAppView(View):
 
     def get_context_data(self, **kwargs):
         """Добавляем параметр аутентификации в контекст"""
-        context = super().get_context_data(
-            **kwargs) if hasattr(super(), 'get_context_data') else {}
+        # Для Django View базового класса нет get_context_data, поэтому создаем пустой контекст
+        context = {}
         context['auth_param'] = self.request.GET.get('_auth', '')
+        context.update(kwargs)
         return context
 
     def dispatch(self, request, *args, **kwargs):
@@ -104,10 +105,29 @@ class TelegramMiniAppView(View):
                 logger.warning("No Telegram WebApp data found in request")
                 return None
 
-            # Парсим данные Telegram WebApp с проверкой подписи
-            from .telegram_auth import get_telegram_user_from_webapp
-            user_data = get_telegram_user_from_webapp(
-                init_data, verify_signature=True)
+            # Используем aiogram 3 для безопасной проверки данных WebApp
+            from django.conf import settings
+            bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', '')
+
+            if bot_token:
+                try:
+                    from aiogram.utils.web_app import \
+                        safe_parse_webapp_init_data
+                    webapp_data = safe_parse_webapp_init_data(
+                        bot_token, init_data)
+                    user_data = webapp_data.get('user', {})
+                except (ValueError, ImportError) as e:
+                    logger.warning(
+                        f"Failed to parse WebApp data with aiogram: {e}")
+                    # Fallback на старую логику
+                    from .telegram_auth import get_telegram_user_from_webapp
+                    user_data = get_telegram_user_from_webapp(
+                        init_data, verify_signature=True)
+            else:
+                # Если нет токена, используем старую логику без проверки подписи
+                from .telegram_auth import get_telegram_user_from_webapp
+                user_data = get_telegram_user_from_webapp(
+                    init_data, verify_signature=False)
 
             if not user_data:
                 logger.warning(

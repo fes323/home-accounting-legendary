@@ -171,7 +171,7 @@ document.getElementById('amount').addEventListener('input', function() {
 function deleteTransaction() {
     if (confirm('Вы уверены, что хотите удалить эту транзакцию? Это действие нельзя отменить.')) {
         const form = document.getElementById('deleteForm');
-        const authParam = '{{ auth_param|escapejs }}';
+        const authParam = '{{ auth_param|default:""|escapejs }}';
         if (authParam) {
             const currentAction = form.action;
             form.action = currentAction + (currentAction.includes('?') ? '&' : '?') + '_auth=' + encodeURIComponent(authParam);

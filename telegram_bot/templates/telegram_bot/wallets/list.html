@@ -108,7 +108,7 @@ function deleteWallet(walletId, walletTitle) {
     if (confirm(`Вы уверены, что хотите удалить кошелек "${walletTitle}"?\n\nВнимание: нельзя удалить кошелек с транзакциями.`)) {
         const form = document.getElementById('deleteForm');
         let actionUrl = '{% url "telegram_bot:wallet_delete" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', walletId);
-        const authParam = '{{ auth_param|escapejs }}';
+        const authParam = '{{ auth_param|default:""|escapejs }}';
         if (authParam) {
             actionUrl += (actionUrl.includes('?') ? '&' : '?') + '_auth=' + encodeURIComponent(authParam);
         }

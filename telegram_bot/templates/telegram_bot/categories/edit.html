@@ -117,7 +117,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
 function deleteCategory() {
     if (confirm('Вы уверены, что хотите удалить эту категорию?\n\nВнимание: нельзя удалить категорию с транзакциями или подкатегориями. Это действие нельзя отменить.')) {
         const form = document.getElementById('deleteForm');
-        const authParam = '{{ auth_param|escapejs }}';
+        const authParam = '{{ auth_param|default:""|escapejs }}';
         if (authParam) {
             const currentAction = form.action;
             form.action = currentAction + (currentAction.includes('?') ? '&' : '?') + '_auth=' + encodeURIComponent(authParam);
