@@ -38,7 +38,7 @@ def main():
     print("3. Запуск бота...")
     try:
         subprocess.run([
-            sys.executable, 'manage.py', 'run_bot'
+            sys.executable, 'manage.py', 'run_bot', '--force'
         ])
     except KeyboardInterrupt:
         print("\n🛑 Бот остановлен пользователем")

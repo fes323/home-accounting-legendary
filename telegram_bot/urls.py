@@ -17,12 +17,12 @@ from telegram_bot.mini_app_views_refactored import (CategoryCreateView,
                                                     WalletListView)
 from telegram_bot.mobile_debug_view import MobileDebugView
 from telegram_bot.test_auth_view import TestAuthView
-from telegram_bot.views import TelegramWebhookView, telegram_webhook
 from telegram_bot.views.telegram_auth_view import (TelegramWebAppAuthView,
                                                    TelegramWebAppLogoutView,
                                                    TelegramWebAppRedirectView,
                                                    TelegramWebAppStatusView)
 from telegram_bot.webapp_integration_view import WebAppIntegrationView
+from telegram_bot.webhook_views import TelegramWebhookView, telegram_webhook
 
 app_name = 'telegram_bot'
 
