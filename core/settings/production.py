@@ -21,7 +21,8 @@ SECRET_KEY = os.getenv(
     'SECRET_KEY', 'django-insecure-change-this-in-production')
 
 # Разрешенные хосты
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.getenv(
+    'ALLOWED_HOSTS', 'localhost,127.0.0.1,www.wallet.my-bucket.ru,wallet.my-bucket.ru').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -186,6 +187,13 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 # Разрешаем встраивание в iframe для Telegram WebApp
 X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+# Дополнительные настройки безопасности для Telegram WebApp
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+SECURE_REFERRER_POLICY = 'same-origin'
+
+# Настройки для работы за прокси
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # HTTPS настройки
 SECURE_SSL_REDIRECT = os.getenv(

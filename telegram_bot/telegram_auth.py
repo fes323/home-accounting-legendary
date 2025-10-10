@@ -22,13 +22,21 @@ def verify_telegram_webapp_data(init_data: str, bot_token: str) -> bool:
     Returns:
         bool: True если подпись корректна
     """
+    import logging
+    logger = logging.getLogger(__name__)
+
     try:
+        if not init_data or not bot_token:
+            logger.warning("Missing init_data or bot_token for verification")
+            return False
+
         # Парсим данные как query string
         parsed_data = dict(urllib.parse.parse_qsl(
             init_data, strict_parsing=True))
 
         # Извлекаем hash
         if 'hash' not in parsed_data:
+            logger.warning("No hash found in Telegram WebApp data")
             return False
 
         received_hash = parsed_data.pop('hash')
@@ -52,9 +60,13 @@ def verify_telegram_webapp_data(init_data: str, bot_token: str) -> bool:
             digestmod=hashlib.sha256
         ).hexdigest()
 
-        return hmac.compare_digest(calculated_hash, received_hash)
+        is_valid = hmac.compare_digest(calculated_hash, received_hash)
+        logger.info(
+            f"Telegram WebApp signature verification: {'PASSED' if is_valid else 'FAILED'}")
+        return is_valid
 
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error verifying Telegram WebApp data: {e}")
         return False
 
 
@@ -68,18 +80,32 @@ def parse_telegram_webapp_data(init_data: str) -> Optional[Dict]:
     Returns:
         Dict с данными пользователя или None при ошибке
     """
+    import logging
+    logger = logging.getLogger(__name__)
+
     try:
+        if not init_data:
+            logger.warning("Empty init_data provided for parsing")
+            return None
+
         # Парсим данные как query string
         parsed_data = dict(urllib.parse.parse_qsl(
             init_data, strict_parsing=True))
 
         if 'user' not in parsed_data:
+            logger.warning("No user data found in Telegram WebApp data")
             return None
 
         user_data = json.loads(parsed_data['user'])
+        logger.info(
+            f"Successfully parsed user data for user: {user_data.get('id')}")
         return user_data
 
-    except Exception:
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON decode error parsing Telegram WebApp data: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Error parsing Telegram WebApp data: {e}")
         return None
 
 

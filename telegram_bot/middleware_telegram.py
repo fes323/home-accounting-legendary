@@ -3,6 +3,7 @@ Middleware для обработки Telegram WebApp запросов
 """
 import logging
 
+from django.core.exceptions import SuspiciousOperation
 from django.http import JsonResponse
 from django.middleware.csrf import CsrfViewMiddleware
 
@@ -63,19 +64,33 @@ class TelegramWebAppSecurityMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # Добавляем заголовки безопасности для Telegram WebApp
-        if self._is_telegram_webapp_request(request):
-            # Разрешаем встраивание в iframe для Telegram
-            request.META['HTTP_X_FRAME_OPTIONS'] = 'ALLOWALL'
+        try:
+            # Добавляем заголовки безопасности для Telegram WebApp
+            if self._is_telegram_webapp_request(request):
+                # Разрешаем встраивание в iframe для Telegram
+                request.META['HTTP_X_FRAME_OPTIONS'] = 'ALLOWALL'
 
-        response = self.get_response(request)
+            response = self.get_response(request)
 
-        # Устанавливаем заголовки для Telegram WebApp
-        if self._is_telegram_webapp_request(request):
-            response['X-Frame-Options'] = 'ALLOWALL'
-            response['Content-Security-Policy'] = "frame-ancestors 'self' https://web.telegram.org https://webk.telegram.org https://webz.telegram.org;"
+            # Устанавливаем заголовки для Telegram WebApp
+            if self._is_telegram_webapp_request(request):
+                response['X-Frame-Options'] = 'ALLOWALL'
+                response['Content-Security-Policy'] = "frame-ancestors 'self' https://web.telegram.org https://webk.telegram.org https://webz.telegram.org;"
 
-        return response
+            return response
+        except SuspiciousOperation as e:
+            logger.warning(f"Suspicious operation detected: {e}")
+            return JsonResponse({
+                'error': 'Bad Request',
+                'message': 'Invalid request detected'
+            }, status=400)
+        except Exception as e:
+            logger.error(
+                f"Error in TelegramWebAppSecurityMiddleware: {e}", exc_info=True)
+            return JsonResponse({
+                'error': 'Internal Server Error',
+                'message': 'An error occurred while processing the request'
+            }, status=500)
 
     def _is_telegram_webapp_request(self, request):
         """

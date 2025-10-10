@@ -20,6 +20,9 @@ from accounting.models.transactionCategory import TransactionCategoryTree
 from accounting.models.wallet import Wallet
 from users.models.user import User
 
+from .utils import (diagnose_telegram_request, get_telegram_error_response,
+                    log_telegram_request)
+
 logger = logging.getLogger(__name__)
 
 
@@ -42,32 +45,45 @@ class TelegramMiniAppView(View):
     def dispatch(self, request, *args, **kwargs):
         from django.conf import settings
 
-        # В режиме отладки разрешаем доступ без Telegram данных
-        if settings.TELEGRAM_MINIAPP_DEBUG_MODE and not self._is_telegram_request(request):
-            # Создаем тестового пользователя для разработки
-            from users.models.user import User
-            test_user, created = User.objects.get_or_create(
-                telegram_id=123456789,  # Тестовый ID
-                defaults={
-                    'username': 'test_user',
-                    'first_name': 'Test',
-                    'last_name': 'User'
-                }
-            )
-            request.user = test_user
+        try:
+            # В режиме отладки разрешаем доступ без Telegram данных
+            if settings.TELEGRAM_MINIAPP_DEBUG_MODE and not self._is_telegram_request(request):
+                # Создаем тестового пользователя для разработки
+                from users.models.user import User
+                test_user, created = User.objects.get_or_create(
+                    telegram_id=123456789,  # Тестовый ID
+                    defaults={
+                        'username': 'test_user',
+                        'first_name': 'Test',
+                        'last_name': 'User'
+                    }
+                )
+                request.user = test_user
+                return super().dispatch(request, *args, **kwargs)
+
+            # Проверяем, что запрос приходит из Telegram
+            if not self._is_telegram_request(request):
+                log_telegram_request(request, 'WARNING')
+                error_response = get_telegram_error_response('unauthorized')
+                return JsonResponse(error_response, status=error_response['code'])
+
+            # Получаем пользователя из Telegram данных
+            user = self._get_telegram_user(request)
+            if not user:
+                log_telegram_request(request, 'WARNING')
+                error_response = get_telegram_error_response('user_not_found')
+                return JsonResponse(error_response, status=error_response['code'])
+
+            request.user = user
             return super().dispatch(request, *args, **kwargs)
 
-        # Проверяем, что запрос приходит из Telegram
-        if not self._is_telegram_request(request):
-            return JsonResponse({'error': 'Unauthorized'}, status=401)
-
-        # Получаем пользователя из Telegram данных
-        user = self._get_telegram_user(request)
-        if not user:
-            return JsonResponse({'error': 'User not found'}, status=401)
-
-        request.user = user
-        return super().dispatch(request, *args, **kwargs)
+        except Exception as e:
+            log_telegram_request(request, 'ERROR')
+            logger.error(
+                f"Error in TelegramMiniAppView.dispatch: {e}", exc_info=True)
+            error_response = get_telegram_error_response(
+                'server_error', str(e))
+            return JsonResponse(error_response, status=error_response['code'])
 
     def _is_telegram_request(self, request):
         """Проверяем, что запрос приходит из Telegram"""
@@ -111,9 +127,14 @@ class TelegramMiniAppView(View):
                 logger.warning("No Telegram WebApp data found in request")
                 return None
 
+            # Логируем полученные данные для отладки (без полного содержимого)
+            logger.info(f"Received Telegram WebApp data: {init_data[:50]}...")
+
             # Используем aiogram 3 для безопасной проверки данных WebApp
             from django.conf import settings
             bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', '')
+
+            user_data = None
 
             if bot_token:
                 try:
@@ -129,18 +150,39 @@ class TelegramMiniAppView(View):
                         'last_name': user_obj.last_name,
                         'username': user_obj.username,
                     }
-                except (ValueError, ImportError) as e:
+                    logger.info(
+                        f"Successfully parsed WebApp data with aiogram for user: {user_obj.id}")
+                except (ValueError, ImportError, AttributeError) as e:
                     logger.warning(
                         f"Failed to parse WebApp data with aiogram: {e}")
                     # Fallback на старую логику
+                    try:
+                        from .telegram_auth import \
+                            get_telegram_user_from_webapp
+                        user_data = get_telegram_user_from_webapp(
+                            init_data, verify_signature=True)
+                        if user_data:
+                            logger.info(
+                                f"Successfully parsed WebApp data with fallback method for user: {user_data.get('id')}")
+                    except Exception as fallback_error:
+                        logger.error(
+                            f"Fallback parsing also failed: {fallback_error}")
+                        user_data = None
+            else:
+                logger.warning(
+                    "No Telegram bot token configured, using unverified parsing")
+                # Если нет токена, используем старую логику без проверки подписи
+                try:
                     from .telegram_auth import get_telegram_user_from_webapp
                     user_data = get_telegram_user_from_webapp(
-                        init_data, verify_signature=True)
-            else:
-                # Если нет токена, используем старую логику без проверки подписи
-                from .telegram_auth import get_telegram_user_from_webapp
-                user_data = get_telegram_user_from_webapp(
-                    init_data, verify_signature=False)
+                        init_data, verify_signature=False)
+                    if user_data:
+                        logger.info(
+                            f"Successfully parsed WebApp data without verification for user: {user_data.get('id')}")
+                except Exception as unverified_error:
+                    logger.error(
+                        f"Unverified parsing failed: {unverified_error}")
+                    user_data = None
 
             if not user_data:
                 logger.warning(
@@ -165,6 +207,9 @@ class TelegramMiniAppView(View):
                 )
                 logger.info(
                     f"Created new user: {user.username} (telegram_id: {telegram_id})")
+            else:
+                logger.info(
+                    f"Found existing user: {user.username} (telegram_id: {telegram_id})")
 
             return user
 
@@ -213,6 +258,9 @@ class MiniAppDiagnosticView(View):
             'all_headers': {k: v for k, v in request.META.items() if k.startswith('HTTP_')}
         }
 
+        # Используем новую утилиту для диагностики
+        diagnosis = diagnose_telegram_request(request)
+
         # Собираем информацию о конфигурации
         config_info = {
             'DEBUG': settings.DEBUG,
@@ -222,13 +270,15 @@ class MiniAppDiagnosticView(View):
             'TELEGRAM_BOT_TOKEN': settings.TELEGRAM_BOT_TOKEN[:10] + '...' if settings.TELEGRAM_BOT_TOKEN else 'Not set',
             'request_host': request.get_host(),
             'request_method': request.method,
-            'is_telegram_request': self._is_telegram_request(request),
-            'telegram_detection_details': telegram_detection_details,
+            'is_telegram_request': diagnosis['is_telegram_request'],
+            'telegram_detection_details': diagnosis['detection_methods'],
             'telegram_data_raw': init_data[:100] + '...' if init_data and len(init_data) > 100 else init_data,
-            'telegram_data_parsed': telegram_data_parsed,
+            'telegram_data_parsed': diagnosis['parsed_data'],
             'signature_valid': signature_valid,
             'all_get_params': dict(request.GET),
             'all_post_params': dict(request.POST),
+            'diagnosis_errors': diagnosis['errors'],
+            'recommendations': diagnosis['recommendations'],
         }
 
         # Если это запрос из браузера, показываем диагностическую информацию
