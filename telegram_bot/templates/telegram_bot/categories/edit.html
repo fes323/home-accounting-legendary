@@ -9,6 +9,9 @@
     <div class="tg-card">
         <form method="post">
             {% csrf_token %}
+            {% if auth_param %}
+            <input type="hidden" name="_auth" value="{{ auth_param }}">
+            {% endif %}
             
             <!-- Название -->
             <div class="tg-form-group">
@@ -97,6 +100,9 @@
 <!-- Форма удаления -->
 <form id="deleteForm" method="post" action="{% url 'telegram_bot:category_delete' category.uuid %}" style="display: none;">
     {% csrf_token %}
+    {% if auth_param %}
+    <input type="hidden" name="_auth" value="{{ auth_param }}">
+    {% endif %}
 </form>
 {% endblock %}
 

@@ -9,6 +9,9 @@
     <div class="tg-card">
         <form method="post">
             {% csrf_token %}
+            {% if auth_param %}
+            <input type="hidden" name="_auth" value="{{ auth_param }}">
+            {% endif %}
             
             <!-- Название -->
             <div class="tg-form-group">

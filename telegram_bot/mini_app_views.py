@@ -30,9 +30,14 @@ class TelegramMiniAppView(View):
         """Добавляем параметр аутентификации в контекст"""
         # Для Django View базового класса нет get_context_data, поэтому создаем пустой контекст
         context = {}
-        context['auth_param'] = self.request.GET.get('_auth', '')
+        # Получаем _auth из GET или POST параметров
+        context['auth_param'] = self.get_auth_param()
         context.update(kwargs)
         return context
+
+    def get_auth_param(self):
+        """Получаем параметр аутентификации из запроса"""
+        return self.request.GET.get('_auth', '') or self.request.POST.get('_auth', '')
 
     def dispatch(self, request, *args, **kwargs):
         from django.conf import settings
@@ -380,7 +385,7 @@ class TransactionCreateView(TelegramMiniAppView):
                 messages.success(request, 'Транзакция успешно создана!')
                 # Добавляем auth_param к редиректу
                 redirect_url = reverse('telegram_bot:transactions')
-                auth_param = request.GET.get('_auth', '')
+                auth_param = self.get_auth_param()
                 if auth_param:
                     redirect_url += f'?_auth={auth_param}'
                 return redirect(redirect_url)
@@ -391,7 +396,7 @@ class TransactionCreateView(TelegramMiniAppView):
                 request, f'Ошибка при создании транзакции: {str(e)}')
             # Добавляем auth_param к редиректу при ошибке
             redirect_url = reverse('telegram_bot:transaction_create')
-            auth_param = request.GET.get('_auth', '')
+            auth_param = self.get_auth_param()
             if auth_param:
                 redirect_url += f'?_auth={auth_param}'
             return redirect(redirect_url)
@@ -463,7 +468,7 @@ class TransactionEditView(TelegramMiniAppView):
                 messages.success(request, 'Транзакция успешно обновлена!')
                 # Добавляем auth_param к редиректу
                 redirect_url = reverse('telegram_bot:transactions')
-                auth_param = request.GET.get('_auth', '')
+                auth_param = self.get_auth_param()
                 if auth_param:
                     redirect_url += f'?_auth={auth_param}'
                 return redirect(redirect_url)
@@ -475,7 +480,7 @@ class TransactionEditView(TelegramMiniAppView):
             # Добавляем auth_param к редиректу при ошибке
             redirect_url = reverse('telegram_bot:transaction_edit', kwargs={
                                    'transaction_id': transaction_id})
-            auth_param = request.GET.get('_auth', '')
+            auth_param = self.get_auth_param()
             if auth_param:
                 redirect_url += f'?_auth={auth_param}'
             return redirect(redirect_url)
@@ -503,7 +508,7 @@ class TransactionDeleteView(TelegramMiniAppView):
                 messages.success(request, 'Транзакция успешно удалена!')
                 # Добавляем auth_param к редиректу
                 redirect_url = reverse('telegram_bot:transactions')
-                auth_param = request.GET.get('_auth', '')
+                auth_param = self.get_auth_param()
                 if auth_param:
                     redirect_url += f'?_auth={auth_param}'
                 return redirect(redirect_url)
@@ -514,7 +519,7 @@ class TransactionDeleteView(TelegramMiniAppView):
                 request, f'Ошибка при удалении транзакции: {str(e)}')
             # Добавляем auth_param к редиректу при ошибке
             redirect_url = reverse('telegram_bot:transactions')
-            auth_param = request.GET.get('_auth', '')
+            auth_param = self.get_auth_param()
             if auth_param:
                 redirect_url += f'?_auth={auth_param}'
             return redirect(redirect_url)
@@ -565,7 +570,7 @@ class WalletCreateView(TelegramMiniAppView):
             messages.success(request, 'Кошелек успешно создан!')
             # Добавляем auth_param к редиректу
             redirect_url = reverse('telegram_bot:wallets')
-            auth_param = request.GET.get('_auth', '')
+            auth_param = self.get_auth_param()
             if auth_param:
                 redirect_url += f'?_auth={auth_param}'
             return redirect(redirect_url)
@@ -575,7 +580,7 @@ class WalletCreateView(TelegramMiniAppView):
             messages.error(request, f'Ошибка при создании кошелька: {str(e)}')
             # Добавляем auth_param к редиректу при ошибке
             redirect_url = reverse('telegram_bot:wallet_create')
-            auth_param = request.GET.get('_auth', '')
+            auth_param = self.get_auth_param()
             if auth_param:
                 redirect_url += f'?_auth={auth_param}'
             return redirect(redirect_url)
@@ -616,7 +621,7 @@ class WalletEditView(TelegramMiniAppView):
             messages.success(request, 'Кошелек успешно обновлен!')
             # Добавляем auth_param к редиректу
             redirect_url = reverse('telegram_bot:wallets')
-            auth_param = request.GET.get('_auth', '')
+            auth_param = self.get_auth_param()
             if auth_param:
                 redirect_url += f'?_auth={auth_param}'
             return redirect(redirect_url)
@@ -628,7 +633,7 @@ class WalletEditView(TelegramMiniAppView):
             # Добавляем auth_param к редиректу при ошибке
             redirect_url = reverse('telegram_bot:wallet_edit', kwargs={
                                    'wallet_id': wallet_id})
-            auth_param = request.GET.get('_auth', '')
+            auth_param = self.get_auth_param()
             if auth_param:
                 redirect_url += f'?_auth={auth_param}'
             return redirect(redirect_url)
@@ -650,7 +655,7 @@ class WalletDeleteView(TelegramMiniAppView):
                     request, f'Нельзя удалить кошелек с {transaction_count} транзакциями')
                 # Добавляем auth_param к редиректу
                 redirect_url = reverse('telegram_bot:wallets')
-                auth_param = request.GET.get('_auth', '')
+                auth_param = self.get_auth_param()
                 if auth_param:
                     redirect_url += f'?_auth={auth_param}'
                 return redirect(redirect_url)
@@ -660,7 +665,7 @@ class WalletDeleteView(TelegramMiniAppView):
             messages.success(request, 'Кошелек успешно удален!')
             # Добавляем auth_param к редиректу
             redirect_url = reverse('telegram_bot:wallets')
-            auth_param = request.GET.get('_auth', '')
+            auth_param = self.get_auth_param()
             if auth_param:
                 redirect_url += f'?_auth={auth_param}'
             return redirect(redirect_url)
@@ -670,7 +675,7 @@ class WalletDeleteView(TelegramMiniAppView):
             messages.error(request, f'Ошибка при удалении кошелька: {str(e)}')
             # Добавляем auth_param к редиректу при ошибке
             redirect_url = reverse('telegram_bot:wallets')
-            auth_param = request.GET.get('_auth', '')
+            auth_param = self.get_auth_param()
             if auth_param:
                 redirect_url += f'?_auth={auth_param}'
             return redirect(redirect_url)
@@ -719,7 +724,7 @@ class CategoryCreateView(TelegramMiniAppView):
             messages.success(request, 'Категория успешно создана!')
             # Добавляем auth_param к редиректу
             redirect_url = reverse('telegram_bot:categories')
-            auth_param = request.GET.get('_auth', '')
+            auth_param = self.get_auth_param()
             if auth_param:
                 redirect_url += f'?_auth={auth_param}'
             return redirect(redirect_url)
@@ -729,7 +734,7 @@ class CategoryCreateView(TelegramMiniAppView):
             messages.error(request, f'Ошибка при создании категории: {str(e)}')
             # Добавляем auth_param к редиректу при ошибке
             redirect_url = reverse('telegram_bot:category_create')
-            auth_param = request.GET.get('_auth', '')
+            auth_param = self.get_auth_param()
             if auth_param:
                 redirect_url += f'?_auth={auth_param}'
             return redirect(redirect_url)
@@ -769,7 +774,7 @@ class CategoryEditView(TelegramMiniAppView):
             messages.success(request, 'Категория успешно обновлена!')
             # Добавляем auth_param к редиректу
             redirect_url = reverse('telegram_bot:categories')
-            auth_param = request.GET.get('_auth', '')
+            auth_param = self.get_auth_param()
             if auth_param:
                 redirect_url += f'?_auth={auth_param}'
             return redirect(redirect_url)
@@ -797,7 +802,7 @@ class CategoryDeleteView(TelegramMiniAppView):
                     request, f'Нельзя удалить категорию с {transaction_count} транзакциями')
                 # Добавляем auth_param к редиректу
                 redirect_url = reverse('telegram_bot:categories')
-                auth_param = request.GET.get('_auth', '')
+                auth_param = self.get_auth_param()
                 if auth_param:
                     redirect_url += f'?_auth={auth_param}'
                 return redirect(redirect_url)
@@ -809,7 +814,7 @@ class CategoryDeleteView(TelegramMiniAppView):
                     request, f'Нельзя удалить категорию с {children_count} подкатегориями')
                 # Добавляем auth_param к редиректу
                 redirect_url = reverse('telegram_bot:categories')
-                auth_param = request.GET.get('_auth', '')
+                auth_param = self.get_auth_param()
                 if auth_param:
                     redirect_url += f'?_auth={auth_param}'
                 return redirect(redirect_url)
@@ -819,7 +824,7 @@ class CategoryDeleteView(TelegramMiniAppView):
             messages.success(request, 'Категория успешно удалена!')
             # Добавляем auth_param к редиректу
             redirect_url = reverse('telegram_bot:categories')
-            auth_param = request.GET.get('_auth', '')
+            auth_param = self.get_auth_param()
             if auth_param:
                 redirect_url += f'?_auth={auth_param}'
             return redirect(redirect_url)
@@ -829,7 +834,7 @@ class CategoryDeleteView(TelegramMiniAppView):
             messages.error(request, f'Ошибка при удалении категории: {str(e)}')
             # Добавляем auth_param к редиректу при ошибке
             redirect_url = reverse('telegram_bot:categories')
-            auth_param = request.GET.get('_auth', '')
+            auth_param = self.get_auth_param()
             if auth_param:
                 redirect_url += f'?_auth={auth_param}'
             return redirect(redirect_url)
