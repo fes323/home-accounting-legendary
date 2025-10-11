@@ -3,11 +3,9 @@
 """
 import logging
 
-from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.utils.decorators import method_decorator
 from django.views import View
 
 from ..utils import get_telegram_error_response
@@ -150,12 +148,11 @@ class TelegramWebAppBaseView(View):
         return context
 
 
-@method_decorator(login_required, name='dispatch')
 class TelegramWebAppAuthenticatedView(TelegramWebAppBaseView):
     """
     Базовый класс для аутентифицированных Telegram WebApp views
 
-    Автоматически проверяет аутентификацию пользователя.
+    Автоматически проверяет аутентификацию пользователя через собственную логику.
     """
     pass
 

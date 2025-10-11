@@ -190,10 +190,10 @@
                 });
                 
                 const data = await response.json();
-                
+
                 if (data.ok && data.user) {
                     updateStatus('Авторизация успешна', 'success');
-                    
+
                     // Перенаправляем на основное приложение с данными авторизации
                     setTimeout(() => {
                         window.location.href = '/telegram/mini-app/?_auth=' + encodeURIComponent(initData);
