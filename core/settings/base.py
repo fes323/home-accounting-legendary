@@ -10,6 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 AUTHENTICATION_BACKENDS = [
     'telegram_bot.backends.telegram_auth.TelegramWebAppAuthBackend',
     'telegram_bot.backends.telegram_auth.TelegramWebAppSessionBackend',
+    'users.backends.auth.AuthBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
@@ -51,9 +52,9 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     # Кастомный CSRF middleware для Telegram
     'telegram_bot.middleware_telegram.TelegramWebAppMiddleware',
-    # Новая система аутентификации Telegram WebApp
-    'telegram_bot.middleware_telegram_auth.TelegramWebAppAuthMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Новая система аутентификации Telegram WebApp (после AuthenticationMiddleware)
+    'telegram_bot.middleware_telegram_auth.TelegramWebAppAuthMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     # Безопасность для Telegram WebApp
     'telegram_bot.middleware_telegram.TelegramWebAppSecurityMiddleware',
@@ -105,7 +106,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 AUTH_USER_MODEL = "users.User"
-AUTHENTICATION_BACKENDS = ["users.backends.auth.AuthBackend"]
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/

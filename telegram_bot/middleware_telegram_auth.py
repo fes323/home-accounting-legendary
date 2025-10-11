@@ -72,8 +72,27 @@ class TelegramWebAppAuthMiddleware:
         Args:
             request: HTTP запрос
         """
+        from django.conf import settings
+
         # Если пользователь уже аутентифицирован, пропускаем
         if request.user.is_authenticated:
+            return
+
+        # В режиме отладки разрешаем доступ без Telegram данных
+        if getattr(settings, 'TELEGRAM_MINIAPP_DEBUG_MODE', False) and not self._is_telegram_request(request):
+            # Создаем тестового пользователя для разработки
+            from users.models.user import User
+            test_user, created = User.objects.get_or_create(
+                telegram_id=123456789,  # Тестовый ID
+                defaults={
+                    'username': 'test_user',
+                    'first_name': 'Test',
+                    'last_name': 'User'
+                }
+            )
+            login(request, test_user)
+            logger.info(
+                f"Debug mode: authenticated test user {test_user.username}")
             return
 
         # Проверяем, что это запрос из Telegram

@@ -95,3 +95,13 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
     }
 }
+
+# ===========================================
+# TELEGRAM MINI-APP DEBUG SETTINGS
+# ===========================================
+
+# Включаем дебаг режим для mini-app в разработке
+TELEGRAM_MINIAPP_DEBUG_MODE = True
+
+# Разрешаем доступ к mini-app без Telegram данных для разработки
+# Это позволяет тестировать mini-app прямо в браузере
