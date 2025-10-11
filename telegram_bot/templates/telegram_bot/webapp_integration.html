@@ -196,7 +196,7 @@
             .then(data => {
                 document.getElementById('server-response').textContent = JSON.stringify(data, null, 2);
                 
-                if (data.ok) {
+                if (data.success) {
                     results.innerHTML = '<div class="success">Authentication successful! User: ' + data.user.username + '</div>';
                 } else {
                     results.innerHTML = '<div class="error">Authentication failed: ' + (data.error || 'Unknown error') + '</div>';

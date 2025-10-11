@@ -191,7 +191,7 @@
                 
                 const data = await response.json();
 
-                if (data.ok && data.user) {
+                if (data.success && data.user) {
                     updateStatus('Авторизация успешна', 'success');
 
                     // Перенаправляем на основное приложение с данными авторизации

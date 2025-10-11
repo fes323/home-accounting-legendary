@@ -275,7 +275,7 @@
                 const data = await response.json();
                 document.getElementById('server-response').textContent = JSON.stringify(data, null, 2);
                 
-                if (data.ok) {
+                if (data.success) {
                     results.innerHTML = '<p style="color: green;">Authentication successful!</p>';
                 } else {
                     results.innerHTML = '<p style="color: red;">Authentication failed: ' + (data.error || 'Unknown error') + '</p>';
