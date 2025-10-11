@@ -488,9 +488,9 @@ class TransactionCreateView(TelegramMiniAppView):
 
                 # Обновляем баланс кошелька
                 if transaction_obj.t_type == 'IN':
-                    wallet.balance += transaction_obj.amount
+                    wallet.balance += wallet.balance + transaction_obj.amount
                 else:
-                    wallet.balance -= transaction_obj.amount
+                    wallet.balance -= wallet.balance - transaction_obj.amount
                 wallet.save()
 
                 messages.success(request, 'Транзакция успешно создана!')
@@ -592,16 +592,16 @@ class TransactionEditView(TelegramMiniAppView):
                 # Пересчитываем балансы кошельков
                 # Убираем старую транзакцию
                 if old_type == 'IN':
-                    old_wallet.balance -= old_amount
+                    old_wallet.balance -= old_wallet.balance - old_amount
                 else:
-                    old_wallet.balance += old_amount
+                    old_wallet.balance += old_wallet.balance + old_amount
                 old_wallet.save()
 
                 # Добавляем новую транзакцию
                 if transaction_obj.t_type == 'IN':
-                    wallet.balance += transaction_obj.amount
+                    wallet.balance += wallet.balance + transaction_obj.amount
                 else:
-                    wallet.balance -= transaction_obj.amount
+                    wallet.balance -= wallet.balance - transaction_obj.amount
                 wallet.save()
 
                 messages.success(request, 'Транзакция успешно обновлена!')
@@ -637,9 +637,9 @@ class TransactionDeleteView(TelegramMiniAppView):
 
                 # Возвращаем баланс кошелька
                 if transaction_obj.t_type == 'IN':
-                    wallet.balance -= transaction_obj.amount
+                    wallet.balance -= wallet.balance - transaction_obj.amount
                 else:
-                    wallet.balance += transaction_obj.amount
+                    wallet.balance += wallet.balance + transaction_obj.amount
                 wallet.save()
 
                 transaction_obj.delete()
