@@ -1,20 +1,17 @@
 from django.urls import path
 
 from telegram_bot.auto_auth_view import AutoAuthView
-from telegram_bot.mini_app_views import MiniAppDiagnosticView
-from telegram_bot.mini_app_views_refactored import (CategoryCreateView,
-                                                    CategoryDeleteView,
-                                                    CategoryEditView,
-                                                    CategoryListView,
-                                                    MiniAppDashboardView,
-                                                    TransactionCreateView,
-                                                    TransactionDeleteView,
-                                                    TransactionEditView,
-                                                    TransactionListView,
-                                                    WalletCreateView,
-                                                    WalletDeleteView,
-                                                    WalletEditView,
-                                                    WalletListView)
+from telegram_bot.mini_app_views import (CategoryCreateView,
+                                         CategoryDeleteView, CategoryEditView,
+                                         CategoryListView,
+                                         MiniAppDashboardView,
+                                         MiniAppDiagnosticView,
+                                         TransactionCreateView,
+                                         TransactionDeleteView,
+                                         TransactionEditView,
+                                         TransactionListView, WalletCreateView,
+                                         WalletDeleteView, WalletEditView,
+                                         WalletListView)
 from telegram_bot.mobile_debug_view import MobileDebugView
 from telegram_bot.test_auth_view import TestAuthView
 from telegram_bot.views.telegram_auth_view import (TelegramWebAppAuthView,
